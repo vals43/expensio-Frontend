@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useTheme } from '../components/theme/ThemeProvider';
 import { CashflowCard } from '../components/dashboard/CashflowCard';
 import { UserProfileCard } from '../components/dashboard/UserProfileCard';
 import { StatisticsCard } from '../components/dashboard/StatisticsCard';
@@ -12,7 +11,7 @@ import { ActionButtonsCard } from './../components/dashboard/ActionButtonsCard';
 import { useJsonUser } from '../api/user/useJsonUser.js';
 import { useJsonDailySummary, useJsonSummary } from '../api/summary/useJsonSummary.js';
 import { getJsonExpenses } from '../api/expenses/getJsonExpenses.js';
-import { getJsonIncomes } from '../api/incomes/getJsonIncomes.js';
+import { getJsonIncomes } from '../api/incomes/getJsonIncomes.jsx';
 
 const upTrendData = [{
   name: 'Jan',
