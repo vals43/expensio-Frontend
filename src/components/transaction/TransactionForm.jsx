@@ -1,20 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
-import { PlusIcon, CalendarIcon, TagIcon, DollarSignIcon, FileTextIcon } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useIncomeActions } from '../../api/incomes/getJsonIncomes';
+import { useState, useEffect } from "react"
+import Button from "../ui/Button"
+import { PlusIcon, CalendarIcon, TagIcon, DollarSignIcon, FileTextIcon } from "lucide-react"
+import { motion } from "framer-motion"
+import { useIncomeActions } from "../../api/incomes/getJsonIncomes"
 
 const TransactionForm = ({ onSubmit, initialData = null }) => {
-  const { handleCreateIncome, handleUpdateIncome } = useIncomeActions();
-  const [isLoading, setIsLoading] = useState(false);
+  const { handleCreateIncome, handleUpdateIncome } = useIncomeActions()
+  const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
-    amount: '',
-    source: '',
-    description: '',
-    date: new Date().toISOString().split('T')[0]
-  });
-  const [errors, setErrors] = useState({});
+    amount: "",
+    source: "",
+    description: "",
+    date: new Date().toISOString().split("T")[0],
+  })
+  const [errors, setErrors] = useState({})
 
   useEffect(() => {
     if (initialData) {
@@ -22,89 +21,293 @@ const TransactionForm = ({ onSubmit, initialData = null }) => {
         amount: initialData.amount,
         source: initialData.source,
         description: initialData.description,
-        date: initialData.date.split('T')[0]
-      });
+        date: initialData.date.split("T")[0],
+      })
     }
-  }, [initialData]);
+  }, [initialData])
 
   const validateForm = () => {
-    const newErrors = {};
+    const newErrors = {}
     if (!formData.amount || isNaN(Number(formData.amount)) || Number(formData.amount) <= 0) {
-      newErrors.amount = 'Please enter a valid amount';
+      newErrors.amount = "Please enter a valid amount"
     }
     if (!formData.source) {
-      newErrors.source = 'Please select a source';
+      newErrors.source = "Please select a source"
     }
     if (!formData.date) {
-      newErrors.date = 'Please select a date';
+      newErrors.date = "Please select a date"
     }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
-  };
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }))
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-    setIsLoading(true);
+    e.preventDefault()
+    if (!validateForm()) return
+    setIsLoading(true)
 
     try {
-      const transactionData = { ...formData, amount: Number(formData.amount) };
-      let result;
+      const transactionData = { ...formData, amount: Number(formData.amount) }
+      let result
       if (initialData) {
-        result = await handleUpdateIncome(initialData.id, transactionData);
+        result = await handleUpdateIncome(initialData.id, transactionData)
       } else {
-        result = await handleCreateIncome(transactionData);
+        result = await handleCreateIncome(transactionData)
       }
-      if (onSubmit) await onSubmit(transactionData);
+      if (onSubmit) await onSubmit(transactionData)
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error("Error submitting form:", error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
       if (!initialData) {
         setFormData({
-          amount: '',
-          source: '',
-          description: '',
-          date: new Date().toISOString().split('T')[0]
-        });
+          amount: "",
+          source: "",
+          description: "",
+          date: new Date().toISOString().split("T")[0],
+        })
       }
     }
-  };
+  }
 
-  const incomeCategories = ['Salary', 'Freelance', 'Investments', 'Gift', 'Other'];
+  const incomeCategories = ["Salary", "Freelance", "Investments", "Gift", "Other"]
 
   return (
-    <motion.form onSubmit={handleSubmit} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="space-y-4">
-      <Input type="number" name="amount" label="Amount" placeholder="0.00" value={formData.amount} onChange={handleChange} error={errors.amount} icon={<DollarSignIcon className="h-5 w-5" />} min="0.01" step="0.01" required />
+    <div className="w-full max-w-md mx-auto p-1">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="relative overflow-hidden rounded-2xl bg-white/10 dark:bg-black/10 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-2xl"
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent dark:from-white/5 pointer-events-none" />
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Source</label>
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
-            <TagIcon className="h-5 w-5" />
-          </div>
-          <select name="source" value={formData.source} onChange={handleChange} className={`block w-full pl-10 rounded-md shadow-sm border-gray-300 dark:border-gray-600 focus:border-indigo-500 focus:ring focus:ring-indigo-500 focus:ring-opacity-50 dark:bg-gray-700 dark:text-gray-100 ${errors.source ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`} required>
-            <option value="">Select a source</option>
-            {incomeCategories.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-blob dark:bg-purple-900/30" />
+          <div className="absolute top-0 -right-4 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000 dark:bg-yellow-900/30" />
+          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000 dark:bg-pink-900/30" />
         </div>
-        {errors.source && <p className="mt-1 text-sm text-red-600 dark:text-red-500">{errors.source}</p>}
-      </div>
 
-      <Input type="text" name="description" label="Description (Optional)" placeholder="Add a description" value={formData.description} onChange={handleChange} icon={<FileTextIcon className="h-5 w-5" />} />
-      <Input type="date" name="date" label="Date" value={formData.date} onChange={handleChange} error={errors.date} icon={<CalendarIcon className="h-5 w-5" />} required />
+        <div className="relative z-10 p-8">
+          <div className="text-center mb-8">
+            <motion.h2
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2"
+            >
+              {initialData ? "Update Income" : "Add New Income"}
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="text-sm text-gray-600 dark:text-gray-400"
+            >
+              Track your financial progress
+            </motion.p>
+          </div>
 
-      <Button type="submit" fullWidth isLoading={isLoading} icon={<PlusIcon className="h-5 w-5" />}>
-        {initialData ? 'Update Income' : 'Add Income'}
-      </Button>
-    </motion.form>
-  );
-};
+          <motion.form
+            onSubmit={handleSubmit}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.4 }}
+            className="space-y-6"
+          >
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+              className="space-y-2"
+            >
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Amount</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors">
+                  <DollarSignIcon className="h-5 w-5" />
+                </div>
+                <input
+                  type="number"
+                  name="amount"
+                  placeholder="0.00"
+                  value={formData.amount}
+                  onChange={handleChange}
+                  min="0.01"
+                  step="0.01"
+                  required
+                  className={`
+                    block w-full pl-12 pr-4 py-4 rounded-xl text-lg font-medium
+                    bg-white/50 dark:bg-black/20 backdrop-blur-sm
+                    border border-white/30 dark:border-white/10
+                    focus:border-primary/50 focus:ring-4 focus:ring-primary/20
+                    placeholder:text-gray-400 dark:placeholder:text-gray-500
+                    text-gray-900 dark:text-white
+                    transition-all duration-200 ease-out
+                    hover:bg-white/60 dark:hover:bg-black/30
+                    ${errors.amount ? "border-red-400 focus:border-red-400 focus:ring-red-200" : ""}
+                  `}
+                />
+              </div>
+              {errors.amount && (
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-sm text-red-500 font-medium"
+                >
+                  {errors.amount}
+                </motion.p>
+              )}
+            </motion.div>
 
-export default TransactionForm;
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6 }}
+              className="space-y-2"
+            >
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Source</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors">
+                  <TagIcon className="h-5 w-5" />
+                </div>
+                <select
+                  name="source"
+                  value={formData.source}
+                  onChange={handleChange}
+                  required
+                  className={`
+                    block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium appearance-none cursor-pointer
+                    bg-white/50 dark:bg-black/20 backdrop-blur-sm
+                    border border-white/30 dark:border-white/10
+                    focus:border-primary/50 focus:ring-4 focus:ring-primary/20
+                    text-gray-900 dark:text-white
+                    transition-all duration-200 ease-out
+                    hover:bg-white/60 dark:hover:bg-black/30
+                    ${errors.source ? "border-red-400 focus:border-red-400 focus:ring-red-200" : ""}
+                  `}
+                >
+                  <option value="" className="bg-white dark:bg-gray-800">
+                    Select a source
+                  </option>
+                  {incomeCategories.map((category) => (
+                    <option key={category} value={category} className="bg-white dark:bg-gray-800">
+                      {category}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+              {errors.source && (
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-sm text-red-500 font-medium"
+                >
+                  {errors.source}
+                </motion.p>
+              )}
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.7 }}
+              className="space-y-2"
+            >
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                Description <span className="text-gray-400 font-normal">(Optional)</span>
+              </label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors">
+                  <FileTextIcon className="h-5 w-5" />
+                </div>
+                <input
+                  type="text"
+                  name="description"
+                  placeholder="Add a description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30"
+                />
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.8 }}
+              className="space-y-2"
+            >
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Date</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors">
+                  <CalendarIcon className="h-5 w-5" />
+                </div>
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  required
+                  className={`
+                    block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium
+                    bg-white/50 dark:bg-black/20 backdrop-blur-sm
+                    border border-white/30 dark:border-white/10
+                    focus:border-primary/50 focus:ring-4 focus:ring-primary/20
+                    text-gray-900 dark:text-white
+                    transition-all duration-200 ease-out
+                    hover:bg-white/60 dark:hover:bg-black/30
+                    ${errors.date ? "border-red-400 focus:border-red-400 focus:ring-red-200" : ""}
+                  `}
+                />
+              </div>
+              {errors.date && (
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-sm text-red-500 font-medium"
+                >
+                  {errors.date}
+                </motion.p>
+              )}
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9 }}
+              className="pt-4"
+            >
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-4 px-6 rounded-xl text-base font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 ease-out disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none backdrop-blur-sm border border-white/20"
+              >
+                <div className="flex items-center justify-center gap-2">
+                  {isLoading ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <PlusIcon className="h-5 w-5" />
+                  )}
+                  {isLoading ? "Processing..." : initialData ? "Update Income" : "Add Income"}
+                </div>
+              </Button>
+            </motion.div>
+          </motion.form>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+export default TransactionForm

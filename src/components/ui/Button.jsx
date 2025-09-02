@@ -22,7 +22,8 @@ export default function Button({
   const variantClasses = {
     primary: theme === 'dark' ? 'bg-primary-600 hover:bg-primary-500 text-white' : 'bg-primary-600 hover:bg-primary-700 text-white',
     secondary: theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-200 hover:bg-gray-300 text-gray-800',
-    outline: theme === 'dark' ? 'bg-transparent border border-gray-600 hover:bg-gray-800 text-gray-200' : 'bg-transparent border border-gray-300 hover:bg-gray-100 text-gray-800'
+    outline: theme === 'dark' ? 'bg-transparent border border-gray-600 hover:bg-gray-800 text-gray-200' : 'bg-transparent border border-gray-300 hover:bg-gray-100 text-gray-800',
+    danger: theme === 'dark' ? 'bg-red-500 border border-gray-600 hover:bg-red-400 text-white' : 'bg-red-500 border border-gray-300 hover:bg-red-400 text-white'
   };
   const widthClass = fullWidth ? 'w-full' : '';
   return <button className={`${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]} ${widthClass} ${className}`} disabled={isLoading || props.disabled} {...props}>

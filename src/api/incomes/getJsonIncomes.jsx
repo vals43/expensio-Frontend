@@ -1,3 +1,4 @@
+// src/context/incomeContext.jsx
 import { useEffect, useState, createContext, useContext } from "react";
 import {
   fetchAllIncomes,
@@ -5,6 +6,7 @@ import {
   updateExistingIncome,
   deleteExistingIncome,
 } from "./incomeService";
+import { NotificationModal } from "../../components/ui/NotificationModal";
 
 export function getJsonIncomes() {
   const [data, setData] = useState(null);
@@ -27,9 +29,11 @@ export function getJsonIncomes() {
 // 🔹 Context pour les incomes
 const IncomeContext = createContext();
 
-// 🔹 Provider pour envelopper ton app
 export function IncomeProvider({ children }) {
   const [incomes, setIncomes] = useState([]);
+
+  // 🔹 Notification modal state
+  const [notification, setNotification] = useState({ isOpen: false, type: "success", message: "" });
 
   // 🔹 Fetch initial des revenus
   useEffect(() => {
@@ -39,19 +43,30 @@ export function IncomeProvider({ children }) {
         setIncomes(data || []);
       } catch (error) {
         console.error("Erreur lors du fetch des revenus :", error);
+        showNotification("error", "Failed to fetch incomes");
       }
     };
     fetchIncomes();
   }, []);
 
+  // 🔹 Helper pour ouvrir la notification
+  const showNotification = (type, message) => {
+    setNotification({ isOpen: true, type, message });
+    setTimeout(() => {
+      setNotification(prev => ({ ...prev, isOpen: false }));
+    }, 2500); // auto close après 2.5s
+  };
+
   // 🔹 Actions sur les revenus
   const handleCreateIncome = async (newIncomeData) => {
     try {
       const response = await createNewIncome(newIncomeData);
-      setIncomes(prev => [...prev, response]); // update local state
+      setIncomes(prev => [...prev, response]);
+      showNotification("success", "Income added successfully");
       return response;
     } catch (error) {
       console.error("Erreur lors de la création du revenu:", error);
+      showNotification("error", "Failed to add income");
       throw error;
     }
   };
@@ -59,12 +74,12 @@ export function IncomeProvider({ children }) {
   const handleUpdateIncome = async (id, updatedData) => {
     try {
       const response = await updateExistingIncome(id, updatedData);
-      setIncomes(prev =>
-        prev.map(income => (income.id === id ? response : income))
-      );
+      setIncomes(prev => prev.map(income => (income.id === id ? response : income)));
+      showNotification("success", "Income updated successfully");
       return response;
     } catch (error) {
       console.error("Erreur lors de la mise à jour du revenu:", error);
+      showNotification("error", "Failed to update income");
       throw error;
     }
   };
@@ -73,8 +88,10 @@ export function IncomeProvider({ children }) {
     try {
       await deleteExistingIncome(id);
       setIncomes(prev => prev.filter(income => income.id !== id));
+      showNotification("success", "Income deleted successfully");
     } catch (error) {
       console.error("Erreur lors de la suppression du revenu:", error);
+      showNotification("error", "Failed to delete income");
       throw error;
     }
   };
@@ -86,9 +103,18 @@ export function IncomeProvider({ children }) {
         handleCreateIncome,
         handleUpdateIncome,
         handleDeleteIncome,
+        showNotification, // pour usage manuel si besoin
       }}
     >
       {children}
+
+      {/* Notification Modal */}
+      <NotificationModal
+        isOpen={notification.isOpen}
+        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+        type={notification.type}
+        message={notification.message}
+      />
     </IncomeContext.Provider>
   );
 }
@@ -104,6 +130,6 @@ export function useIncomes() {
 
 // 🔹 Hook pour accéder uniquement aux actions
 export function useIncomeActions() {
-  const { handleCreateIncome, handleUpdateIncome, handleDeleteIncome } = useIncomes();
-  return { handleCreateIncome, handleUpdateIncome, handleDeleteIncome };
+  const { handleCreateIncome, handleUpdateIncome, handleDeleteIncome, showNotification } = useIncomes();
+  return { handleCreateIncome, handleUpdateIncome, handleDeleteIncome, showNotification };
 }

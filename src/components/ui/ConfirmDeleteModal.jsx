@@ -27,7 +27,7 @@ export const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, itemName = "thi
           <p>Are you sure you want to delete {itemName}?</p>
           <div className="flex justify-end gap-3">
             <Button variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button variant="destructive" onClick={handleConfirm}>Delete</Button>
+            <Button variant="danger" onClick={handleConfirm}>Delete</Button>
           </div>
         </div>
       )}

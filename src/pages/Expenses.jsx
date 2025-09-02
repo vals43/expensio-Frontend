@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import ExpenseActivityCard from '../components/card/ExpenseActivityCard';
 import { useJsonDailySummary, useJsonExpensesBySource, useJsonSummary } from './../api/summary/useJsonSummary';
 import { getJsonExpenses } from '../api/expenses/getJsonExpenses';
+import ExpenseList from '../components/expenses/ExpensesList';
 
 
 const Expenses = () => {
@@ -81,6 +82,8 @@ const Expenses = () => {
     return formattedData;
   };
   const data = formatDailyExpenses(daily)
+  console.log(exp);
+  
 
 
 
@@ -108,7 +111,9 @@ const Expenses = () => {
         </Button>
       </div>
     </div>
-    {activeView === 'list' ? <TransactionList transactions={expenses} type="expense" /> : <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    
+    
+    {activeView === 'list' ? <ExpenseList transactions={exp} type="expense" /> : <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <Card className="md:col-span-1 p-6 bg-white dark:bg-dark-card">
         <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
           Expense Breakdown
