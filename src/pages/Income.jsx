@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import TransactionList from '../components/transaction/TransactionList';
 import TransactionForm from '../components/transaction/TransactionForm';
 import Card from '../components/ui/Card';
-import Modal from '../components/ui/Modal';
 import Button from '../components/ui/Button';
 import { PlusIcon, ChartBarIcon, PieChartIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ExpenseActivityCard from '../components/card/ExpenseActivityCard';
 import { useIncomes } from '../api/incomes/getJsonIncomes';
 import { Loader } from './../components/ui/Loader';
+import Modal from '../components/ui/Modal';
 
 const Income = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -16,10 +16,8 @@ const Income = () => {
 
   const { incomes } = useIncomes(); // Hook depuis le provider
 
-  // 🔹 Gestion du chargement
   if (!incomes) return <Loader message="Chargement des incomes ..." />;
 
-  // 🔹 Recalcul dynamique des catégories pour le breakdown
   const categorySummary = incomes.reduce((acc, income) => {
     const existing = acc.find(item => item.source === income.source);
     if (existing) {
@@ -32,7 +30,6 @@ const Income = () => {
 
   const totalIncome = incomes.reduce((total, income) => total + Number(income.amount), 0);
 
-  // 🔹 Recalcul dynamique des données pour le chart daily
   const dailyData = incomes.reduce((acc, income) => {
     const day = acc.find(d => d.date === income.date);
     if (day) {
@@ -121,18 +118,17 @@ const Income = () => {
           <Card className="md:col-span-2 p-6 bg-white dark:bg-dark-card">
             <ExpenseActivityCard data={data} />
           </Card>
-
-          {/* Add New Income */}
-          <Card className="md:col-span-2 p-6">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Add New Income</h3>
-            <TransactionForm type="income" />
-          </Card>
         </div>
       )}
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add Income" maxWidth="md">
-        <TransactionForm type="income" onSuccess={() => setIsModalOpen(false)} />
-      </Modal>
+      {/* Modal pour le formulaire */}
+      {isModalOpen && (
+          <TransactionForm
+            type="income"
+            onSubmit={() => setIsModalOpen(false)}
+            onClose={() => setIsModalOpen(false)}
+          />
+      )}
     </div>
   );
 };

@@ -21,8 +21,34 @@ export async function getUser() {
 
     return response.data;
   } catch (error) {
+    console.error("Error in getUser:", error.response?.data || error.message);
+    throw error;
+  }
+}
+
+export async function changePassword(oldPassword, newPassword) {
+  const token = getToken();
+
+  if (!token) {
+    throw new Error("No authentication token found.");
+  }
+
+  try {
+    const response = await axios.post(
+      `${BACKEND_URL}/api/user/change-password`,
+      { oldPassword, newPassword },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
     console.error(
-      "Error in getUser:",
+      "Error in changePassword:",
       error.response?.data || error.message
     );
     throw error;

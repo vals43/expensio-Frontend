@@ -44,15 +44,6 @@ const Modal = ({
       {isOpen && <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex min-h-screen items-center justify-center p-4 text-center">
             <motion.div initial={{
-          opacity: 0
-        }} animate={{
-          opacity: 1
-        }} exit={{
-          opacity: 0
-        }} transition={{
-          duration: 0.2
-        }} className="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" onClick={onClose}></motion.div>
-            <motion.div initial={{
           scale: 0.95,
           opacity: 0
         }} animate={{

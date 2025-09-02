@@ -1,39 +1,99 @@
-import { Tablet } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Laptop } from "lucide-react";
+import ChangePasswordForm from "./ChangePasswordForm";
 
 export default function ProfileSecurity() {
-    return (
-        <div className="bg-white dark:bg-dark-card  p-6 rounded-xl shadow-sm mt-6">
-        <h3 className="font-medium mb-6">Security</h3>
-        <div className="space-y-6">
-          <div>
-            <div className="flex justify-between mb-2">
-              <label className="block font-medium">Change Password</label>
-              <button className="text-blue-600 text-sm">Change</button>
-            </div>
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [deviceInfo, setDeviceInfo] = useState({
+    brand: "Inconnue",
+    model: "Inconnu",
+  });
+
+  useEffect(() => {
+    if (navigator.userAgentData) {
+      const { brands, platform } = navigator.userAgentData;
+      
+      
+      let brandName = "Inconnue";
+      const browserBrand = brands.find(b => b.brand !== "Not;A=Brand");
+      if (browserBrand) {
+        brandName = browserBrand.brand;
+      }
+      
+      navigator.userAgentData.getHighEntropyValues(['model']).then(ua => {
+        setDeviceInfo({
+          brand: brandName,
+          model: ua.model || platform
+        });
+      }).catch(() => {
+        setDeviceInfo({
+          brand: brandName,
+          model: platform
+        });
+      });
+    } else {
+      const userAgent = navigator.userAgent;
+      if (userAgent.includes("Windows")) {
+        setDeviceInfo({ brand: "Microsoft", model: "PC Windows" });
+      } else if (userAgent.includes("Mac")) {
+        setDeviceInfo({ brand: "Apple", model: "Mac" });
+      } else {
+        setDeviceInfo({ brand: "Inconnue", model: "Appareil Inconnu" });
+      }
+    }
+  }, []);
+
+  const now = new Date();
+  const formattedDate = now.toLocaleDateString('fr-FR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+  const formattedTime = now.toLocaleTimeString('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  return (
+    <div className="bg-white dark:bg-dark-card p-6 rounded-xl shadow-sm mt-6">
+      <h3 className="font-medium mb-6">Sécurité</h3>
+      <div className="space-y-6">
+        <div>
+          <div className="flex justify-between mb-2">
+            <label className="block font-medium">Changer le mot de passe</label>
+            <button onClick={() => setShowChangePassword(!showChangePassword)} className="text-blue-600 text-sm">
+              {showChangePassword ? "Fermer" : "Changer"}
+            </button>
           </div>
-          <div className="border-t pt-6">
-            <div className="flex justify-between mb-2">
-              <label className="block font-medium">Active Sessions</label>
-              <button className="text-blue-600 text-sm">Manage</button>
+          {showChangePassword && (
+            <div className="mt-4">
+              <ChangePasswordForm />
             </div>
-            <div className="bg-gray-50 dark:bg-dark-border p-3 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Tablet className='mr-4' />
-                  <div>
-                    <p className="text-sm font-medium">Current Session</p>
-                    <p className="text-xs text-gray-500">
-                      New York, USA · June 15, 2022 at 2:30 PM
-                    </p>
-                  </div>
+          )}
+        </div>
+        <div className="border-t pt-6">
+          <div className="flex justify-between mb-2">
+            <label className="block font-medium">Sessions actives</label>
+            <button className="text-blue-600 text-sm">Gérer</button>
+          </div>
+          <div className="bg-gray-50 dark:bg-dark-border p-3 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Laptop className="mr-4" />
+                <div>
+                  <p className="text-sm font-medium">Session actuelle</p>
+                  <p className="text-xs text-gray-500">
+                    {deviceInfo.brand} ({deviceInfo.model}) · {formattedDate} à {formattedTime}
+                  </p>
                 </div>
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                  Active
-                </span>
               </div>
+              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                Active
+              </span>
             </div>
           </div>
         </div>
       </div>
-    )
+    </div>
+  );
 }

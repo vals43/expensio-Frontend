@@ -10,7 +10,7 @@ import { CreditCardIcon } from 'lucide-react';
 import { ActionButtonsCard } from './../components/dashboard/ActionButtonsCard';
 import { useJsonUser } from '../api/user/useJsonUser.js';
 import { useJsonDailySummary, useJsonSummary } from '../api/summary/useJsonSummary.js';
-import { getJsonExpenses } from '../api/expenses/getJsonExpenses.js';
+import { getJsonExpenses } from '../api/expenses/expenseContext.jsx';
 import { getJsonIncomes } from '../api/incomes/getJsonIncomes.jsx';
 
 const upTrendData = [{

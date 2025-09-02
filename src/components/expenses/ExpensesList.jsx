@@ -1,3 +1,4 @@
+// src/components/expenses/ExpenseList.jsx
 import { useState, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -12,21 +13,15 @@ import {
   SearchIcon,
 } from "lucide-react"
 import Button from "../ui/Button"
+import { useExpenses, useExpenseActions } from "../../api/expenses/expenseContext"
 
-
-
+// UI subcomponents
 const Card = ({ children, className }) => (
   <div className={`rounded-lg bg-white dark:bg-dark-card shadow-sm p-4 ${className}`}>{children}</div>
 )
-const CardContent = ({ children, className }) => (
-  <div className={`p-6 pt-0 ${className}`}>{children}</div>
-)
-const CardHeader = ({ children, className }) => (
-  <div className={`flex flex-col space-y-1.5 p-6 ${className}`}>{children}</div>
-)
-const CardTitle = ({ children, className }) => (
-  <h3 className={`text-xl font-semibold leading-none tracking-tight ${className}`}>{children}</h3>
-)
+const CardContent = ({ children, className }) => <div className={`p-6 pt-0 ${className}`}>{children}</div>
+const CardHeader = ({ children, className }) => <div className={`flex flex-col space-y-1.5 p-6 ${className}`}>{children}</div>
+const CardTitle = ({ children, className }) => <h3 className={`text-xl font-semibold leading-none tracking-tight ${className}`}>{children}</h3>
 const CardAction = ({ children }) => <div className="ml-auto">{children}</div>
 
 const Table = ({ children }) => (
@@ -35,22 +30,20 @@ const Table = ({ children }) => (
   </div>
 )
 const TableBody = ({ children }) => <tbody className="[&_tr:last-child]:border-0">{children}</tbody>
-const TableCell = ({ children, className }) => (
-  <td className={`p-4 align-middle [&:has([role=checkbox])]:pr-0 ${className}`}>{children}</td>
-)
-const TableHead = ({ children, className }) => (
-  <th className={`h-12 px-4 text-left align-middle font-medium text-muted-foreground ${className}`}>{children}</th>
-)
+const TableCell = ({ children, className }) => <td className={`p-4 align-middle [&:has([role=checkbox])]:pr-0 ${className}`}>{children}</td>
+const TableHead = ({ children, className }) => <th className={`h-12 px-4 text-left align-middle font-medium text-muted-foreground ${className}`}>{children}</th>
 const TableHeader = ({ children }) => <thead className="[&_tr]:border-b">{children}</thead>
 const TableRow = ({ children, className }) => (
   <tr className={`border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted ${className}`}>{children}</tr>
 )
 
-const ExpenseList = ({ transactions = [], onEdit, onDelete }) => {
+const ExpenseList = () => {
+  const { expenses } = useExpenses()
+  const { handleUpdateExpense, handleDeleteExpense } = useExpenseActions()
+
   const [viewMode, setViewMode] = useState("card")
   const [selectedReceipt, setSelectedReceipt] = useState(null)
   const [isDeleting, setIsDeleting] = useState(null)
-
   const [searchTerm, setSearchTerm] = useState("")
   const [filterCategory, setFilterCategory] = useState("all")
   const [sortOrder, setSortOrder] = useState("desc")
@@ -84,13 +77,13 @@ const ExpenseList = ({ transactions = [], onEdit, onDelete }) => {
 
   // === Filtres dynamiques ===
   const uniqueCategories = useMemo(() => {
-    const setValues = new Set(transactions.map((t) => t.category?.name).filter(Boolean))
+    const setValues = new Set(expenses.map((t) => t.category?.name).filter(Boolean))
     return Array.from(setValues)
-  }, [transactions])
+  }, [expenses])
 
   const filteredTransactions = useMemo(() => {
     const searchLower = searchTerm.toLowerCase()
-    let result = transactions.filter((t) => {
+    let result = expenses.filter((t) => {
       const matchesSearch =
         t.description?.toLowerCase().includes(searchLower) ||
         t.category?.name?.toLowerCase().includes(searchLower) ||
@@ -103,7 +96,7 @@ const ExpenseList = ({ transactions = [], onEdit, onDelete }) => {
       sortOrder === "asc" ? new Date(a.date) - new Date(b.date) : new Date(b.date) - new Date(a.date)
     )
     return result
-  }, [transactions, searchTerm, filterCategory, sortOrder])
+  }, [expenses, searchTerm, filterCategory, sortOrder])
 
   const total = filteredTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0)
   const average = filteredTransactions.length ? total / filteredTransactions.length : 0
@@ -111,7 +104,7 @@ const ExpenseList = ({ transactions = [], onEdit, onDelete }) => {
   const handleDelete = async (id) => {
     setIsDeleting(id)
     try {
-      await onDelete?.(id)
+      await handleDeleteExpense(id)
     } catch (err) {
       console.error(err)
     } finally {
@@ -122,7 +115,7 @@ const ExpenseList = ({ transactions = [], onEdit, onDelete }) => {
   return (
     <div className="w-full space-y-6">
       {/* Header */}
-      <div className=" shadow-xl">
+      <div className="shadow-xl">
         <div className="bg-primary p-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-2xl font-bold text-primary-foreground tracking-tight">EXPENSES</h2>
@@ -219,7 +212,7 @@ const ExpenseList = ({ transactions = [], onEdit, onDelete }) => {
             transition={{ duration: 0.3 }}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
-            {filteredTransactions.map((t, index) => (
+            {filteredTransactions.map((t) => (
               <motion.div key={t.id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}>
                 <Card className="hover:shadow-2xl shadow-xl transition-all duration-300 hover:scale-[1.02] rounded-xl">
                   <CardHeader>
@@ -238,7 +231,11 @@ const ExpenseList = ({ transactions = [], onEdit, onDelete }) => {
                               <ReceiptIcon className="h-4 w-4" />
                             </Button>
                           )}
-                          <Button variant="ghost" size="sm" onClick={() => onEdit?.(t)}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleUpdateExpense(t.id, { ...t })}
+                          >
                             <EditIcon className="h-4 w-4" />
                           </Button>
                           <Button
@@ -293,7 +290,7 @@ const ExpenseList = ({ transactions = [], onEdit, onDelete }) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTransactions.map((t, index) => (
+                {filteredTransactions.map((t) => (
                   <motion.tr key={t.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-muted/30">
                     <TableCell>{formatAmount(t.amount)}</TableCell>
                     <TableCell>
@@ -311,7 +308,11 @@ const ExpenseList = ({ transactions = [], onEdit, onDelete }) => {
                             <ReceiptIcon className="h-4 w-4" />
                           </Button>
                         )}
-                        <Button variant="ghost" size="sm" onClick={() => onEdit?.(t)}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleUpdateExpense(t.id, { ...t })}
+                        >
                           <EditIcon className="h-4 w-4" />
                         </Button>
                         <Button

@@ -9,8 +9,9 @@ import { PlusIcon, ChartBarIcon, PieChartIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ExpenseActivityCard from '../components/card/ExpenseActivityCard';
 import { useJsonDailySummary, useJsonExpensesBySource, useJsonSummary } from './../api/summary/useJsonSummary';
-import { getJsonExpenses } from '../api/expenses/getJsonExpenses';
+import { getJsonExpenses } from '../api/expenses/expenseContext';
 import ExpenseList from '../components/expenses/ExpensesList';
+import ExpenseForm from '../components/expenses/ExpenseForm';
 
 
 const Expenses = () => {
@@ -82,8 +83,6 @@ const Expenses = () => {
     return formattedData;
   };
   const data = formatDailyExpenses(daily)
-  console.log(exp);
-  
 
 
 
@@ -168,7 +167,7 @@ const Expenses = () => {
       </Card>
     </div>}
     <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add Expense" maxWidth="md">
-      <TransactionForm type="expense" onSuccess={() => setIsModalOpen(false)} />
+      <ExpenseForm  onSuccess={() => setIsModalOpen(false)} />
     </Modal>
   </div>;
 };

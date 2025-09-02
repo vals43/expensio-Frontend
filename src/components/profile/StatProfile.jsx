@@ -1,19 +1,24 @@
 
 import { getJsonIncomes } from './../../api/incomes/getJsonIncomes';
-import { getJsonExpenses } from './../../api/expenses/getJsonExpenses';
+import { getJsonExpenses } from './../../api/expenses/expenseContext';
+import { useCategories } from '../../api/category/categoryContext';
 
 
 export default function StatProfile(){
   const incomes = getJsonIncomes();
   const expenses = getJsonExpenses();
+    const { categories } = useCategories();
 
-  if (!incomes || !expenses) {
+    
+
+  if (!incomes || !expenses || !categories) {
     return (
       <div className="bg-light-card dark:bg-dark-card p-6 rounded-xl shadow-sm text-center text-light-text dark:text-dark-text">
         <p className="text-gray-500 dark:text-gray-400">Chargement des stats ...</p>
       </div>
     );
   }
+  
   
     return (
         <div className="bg-white dark:bg-dark-card p-6 rounded-xl shadow-sm mt-6">
@@ -40,7 +45,7 @@ export default function StatProfile(){
               <span className="text-sm text-gray-500">
                 Total Categories
               </span>
-              <span className="text-sm font-medium">12</span>
+              <span className="text-sm font-medium">{categories.length}</span>
             </div>
           </div>
           <div>
