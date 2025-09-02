@@ -1,6 +1,6 @@
 // src/components/expenses/ExpenseList.jsx
-import { useState, useMemo } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutGridIcon,
   ListIcon,
@@ -11,56 +11,50 @@ import {
   FileTextIcon,
   XIcon,
   SearchIcon,
-} from "lucide-react"
-import Button from "../ui/Button"
-import { useExpenses, useExpenseActions } from "../../api/expenses/expenseContext"
+} from "lucide-react";
+import Button from "../ui/Button";
+import { useExpenses, useExpenseActions } from "../../api/expenses/expenseContext";
+import { useReceiptActions } from "../../api/receipt/receiptContext";
 
 // UI subcomponents
 const Card = ({ children, className }) => (
   <div className={`rounded-lg bg-white dark:bg-dark-card shadow-sm p-4 ${className}`}>{children}</div>
-)
-const CardContent = ({ children, className }) => <div className={`p-6 pt-0 ${className}`}>{children}</div>
-const CardHeader = ({ children, className }) => <div className={`flex flex-col space-y-1.5 p-6 ${className}`}>{children}</div>
-const CardTitle = ({ children, className }) => <h3 className={`text-xl font-semibold leading-none tracking-tight ${className}`}>{children}</h3>
-const CardAction = ({ children }) => <div className="ml-auto">{children}</div>
+);
+const CardContent = ({ children, className }) => <div className={`p-6 pt-0 ${className}`}>{children}</div>;
+const CardHeader = ({ children, className }) => <div className={`flex flex-col space-y-1.5 p-6 ${className}`}>{children}</div>;
+const CardTitle = ({ children, className }) => <h3 className={`text-xl font-semibold leading-none tracking-tight ${className}`}>{children}</h3>;
+const CardAction = ({ children }) => <div className="ml-auto">{children}</div>;
 
 const Table = ({ children }) => (
   <div className="w-full overflow-auto">
     <table className="w-full caption-bottom text-sm">{children}</table>
   </div>
-)
-const TableBody = ({ children }) => <tbody className="[&_tr:last-child]:border-0">{children}</tbody>
-const TableCell = ({ children, className }) => <td className={`p-4 align-middle [&:has([role=checkbox])]:pr-0 ${className}`}>{children}</td>
-const TableHead = ({ children, className }) => <th className={`h-12 px-4 text-left align-middle font-medium text-muted-foreground ${className}`}>{children}</th>
-const TableHeader = ({ children }) => <thead className="[&_tr]:border-b">{children}</thead>
+);
+const TableBody = ({ children }) => <tbody className="[&_tr:last-child]:border-0">{children}</tbody>;
+const TableCell = ({ children, className }) => <td className={`p-4 align-middle [&:has([role=checkbox])]:pr-0 ${className}`}>{children}</td>;
+const TableHead = ({ children, className }) => <th className={`h-12 px-4 text-left align-middle font-medium text-muted-foreground ${className}`}>{children}</th>;
+const TableHeader = ({ children }) => <thead className="[&_tr]:border-b">{children}</thead>;
 const TableRow = ({ children, className }) => (
   <tr className={`border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted ${className}`}>{children}</tr>
-)
+);
 
 const ExpenseList = () => {
-  const { expenses } = useExpenses()
-  const { handleUpdateExpense, handleDeleteExpense } = useExpenseActions()
+  const { expenses } = useExpenses();
+  const { handleUpdateExpense, handleDeleteExpense } = useExpenseActions();
+  const { handleFetchReceipt } = useReceiptActions();
 
-  const [viewMode, setViewMode] = useState("card")
-  const [selectedReceipt, setSelectedReceipt] = useState(null)
-  const [isDeleting, setIsDeleting] = useState(null)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filterCategory, setFilterCategory] = useState("all")
-  const [sortOrder, setSortOrder] = useState("desc")
+  const [viewMode, setViewMode] = useState("card");
+  const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [sortOrder, setSortOrder] = useState("desc");
 
   // Formatters
   const formatDate = (dateString) =>
-    new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    })
-
+    new Date(dateString).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
   const formatAmount = (amount) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(parseFloat(amount))
+    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(parseFloat(amount));
 
   const getCategoryColor = (categoryName) => {
     const colors = {
@@ -71,46 +65,55 @@ const ExpenseList = () => {
       Shopping: "bg-pink-500",
       Utilities: "bg-yellow-500",
       Other: "bg-gray-500",
-    }
-    return colors[categoryName] || colors.Other
-  }
+    };
+    return colors[categoryName] || colors.Other;
+  };
 
-  // === Filtres dynamiques ===
+  // === Filters ===
   const uniqueCategories = useMemo(() => {
-    const setValues = new Set(expenses.map((t) => t.category?.name).filter(Boolean))
-    return Array.from(setValues)
-  }, [expenses])
+    const setValues = new Set(expenses.map((t) => t.category?.name).filter(Boolean));
+    return Array.from(setValues);
+  }, [expenses]);
 
   const filteredTransactions = useMemo(() => {
-    const searchLower = searchTerm.toLowerCase()
+    const searchLower = searchTerm.toLowerCase();
     let result = expenses.filter((t) => {
       const matchesSearch =
         t.description?.toLowerCase().includes(searchLower) ||
         t.category?.name?.toLowerCase().includes(searchLower) ||
-        t.amount.toString().includes(searchTerm)
-      const matchesFilter = filterCategory === "all" || t.category?.name === filterCategory
-      return matchesSearch && matchesFilter
-    })
-
+        t.amount.toString().includes(searchTerm);
+      const matchesFilter = filterCategory === "all" || t.category?.name === filterCategory;
+      return matchesSearch && matchesFilter;
+    });
     result.sort((a, b) =>
       sortOrder === "asc" ? new Date(a.date) - new Date(b.date) : new Date(b.date) - new Date(a.date)
-    )
-    return result
-  }, [expenses, searchTerm, filterCategory, sortOrder])
+    );
+    return result;
+  }, [expenses, searchTerm, filterCategory, sortOrder]);
 
-  const total = filteredTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0)
-  const average = filteredTransactions.length ? total / filteredTransactions.length : 0
+  const total = filteredTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+  const average = filteredTransactions.length ? total / filteredTransactions.length : 0;
 
   const handleDelete = async (id) => {
-    setIsDeleting(id)
+    setIsDeleting(id);
     try {
-      await handleDeleteExpense(id)
+      await handleDeleteExpense(id);
     } catch (err) {
-      console.error(err)
+      console.error(err);
     } finally {
-      setIsDeleting(null)
+      setIsDeleting(null);
     }
-  }
+  };
+
+  const handleOpenReceipt = async (expenseId) => {
+    try {
+      const blob = await handleFetchReceipt(expenseId); // fetch Blob from context
+      const url = URL.createObjectURL(blob);
+      setSelectedReceipt({ url, type: blob.type });
+    } catch (err) {
+      console.error("Failed to fetch receipt:", err);
+    }
+  };
 
   return (
     <div className="w-full space-y-6">
@@ -144,9 +147,7 @@ const ExpenseList = () => {
             >
               <option value="all">All Categories</option>
               {uniqueCategories.map((c, i) => (
-                <option key={i} value={c}>
-                  {c}
-                </option>
+                <option key={i} value={c}>{c}</option>
               ))}
             </select>
 
@@ -162,23 +163,11 @@ const ExpenseList = () => {
 
             {/* Toggle View */}
             <div className="flex items-center gap-2 bg-primary-foreground/10 p-1 rounded">
-              <Button
-                variant={viewMode === "card" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("card")}
-                className={viewMode === "card" ? "bg-accent text-accent-foreground" : ""}
-              >
-                <LayoutGridIcon className="h-4 w-4 mr-1" />
-                Cards
+              <Button variant={viewMode === "card" ? "default" : "ghost"} size="sm" onClick={() => setViewMode("card")}>
+                <LayoutGridIcon className="h-4 w-4 mr-1" /> Cards
               </Button>
-              <Button
-                variant={viewMode === "list" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewMode("list")}
-                className={viewMode === "list" ? "bg-accent text-accent-foreground" : ""}
-              >
-                <ListIcon className="h-4 w-4 mr-1" />
-                List
+              <Button variant={viewMode === "list" ? "default" : "ghost"} size="sm" onClick={() => setViewMode("list")}>
+                <ListIcon className="h-4 w-4 mr-1" /> List
               </Button>
             </div>
           </div>
@@ -227,15 +216,11 @@ const ExpenseList = () => {
                       <CardAction>
                         <div className="flex items-center gap-1">
                           {t.receipt && (
-                            <Button variant="ghost" size="sm" onClick={() => setSelectedReceipt(t.receipt)}>
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenReceipt(t.id)}>
                               <ReceiptIcon className="h-4 w-4" />
                             </Button>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleUpdateExpense(t.id, { ...t })}
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => handleUpdateExpense(t.id, { ...t })}>
                             <EditIcon className="h-4 w-4" />
                           </Button>
                           <Button
@@ -304,23 +289,14 @@ const ExpenseList = () => {
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         {t.receipt && (
-                          <Button variant="ghost" size="sm" onClick={() => setSelectedReceipt(t.receipt)}>
+                          <Button variant="ghost" size="sm" onClick={() => handleOpenReceipt(t.id)}>
                             <ReceiptIcon className="h-4 w-4" />
                           </Button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleUpdateExpense(t.id, { ...t })}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => handleUpdateExpense(t.id, { ...t })}>
                           <EditIcon className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(t.id)}
-                          disabled={isDeleting === t.id}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(t.id)} disabled={isDeleting === t.id}>
                           {isDeleting === t.id ? (
                             <div className="w-4 h-4 border-2 border-current border-t-transparent animate-spin rounded-full" />
                           ) : (
@@ -361,14 +337,31 @@ const ExpenseList = () => {
                 </Button>
               </div>
               <div className="p-6 flex items-center justify-center">
-                <p className="text-muted-foreground">Receipt preview placeholder</p>
+                {selectedReceipt?.url ? (
+                  selectedReceipt.type === "application/pdf" ? (
+                    <iframe
+                      src={selectedReceipt.url}
+                      className="w-full h-[80vh]"
+                      title="Receipt PDF"
+                    />
+                  ) : (
+                    <img
+                      src={selectedReceipt.url}
+                      alt="Receipt"
+                      className="max-h-[80vh] object-contain"
+                    />
+                  )
+                ) : (
+                  <p className="text-muted-foreground">No receipt available</p>
+                )}
               </div>
+
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
-  )
-}
+  );
+};
 
-export default ExpenseList
+export default ExpenseList;

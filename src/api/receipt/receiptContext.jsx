@@ -1,39 +1,62 @@
-// src/context/receiptContext.jsx
 import { useState, createContext, useContext } from "react";
-import { fetchReceiptById } from "../services/receiptService";
+import { fetchReceiptByExpenseId } from "./receiptService";
 import { NotificationModal } from "../../components/ui/NotificationModal";
 
-// 🔹 Context for receipts
+// Context for receipts
 const ReceiptContext = createContext();
 
 export function ReceiptProvider({ children }) {
   const [receipt, setReceipt] = useState(null);
 
-  // 🔹 Notification state
+  // Notification state
   const [notification, setNotification] = useState({
     isOpen: false,
     type: "success",
     message: "",
   });
 
-  // 🔹 Helper to show notifications
+  // Show notifications
   const showNotification = (type, message) => {
     setNotification({ isOpen: true, type, message });
     setTimeout(() => {
       setNotification((prev) => ({ ...prev, isOpen: false }));
-    }, 2500); // auto close after 2.5s
+    }, 2500);
   };
 
-  // 🔹 Action to fetch receipt by expense ID
-  const handleFetchReceipt = async (id) => {
+  // === New: fetch receipt blob without opening ===
+  const handleFetchReceipt = async (expenseId) => {
     try {
-      const data = await fetchReceiptById(id);
-      setReceipt(data);
-      return data;
-    } catch (error) {
-      console.error("Error fetching receipt:", error);
+      const response = await fetchReceiptByExpenseId(expenseId);
+      // The service already returns { data, type }
+      const blob = new Blob([response.data], { type: response.type || "application/pdf" });
+      return blob; // just return the blob
+    } catch (err) {
+      console.error("Failed to fetch receipt:", err);
       showNotification("error", "Failed to fetch receipt");
-      throw error;
+      throw err;
+    }
+  };
+
+  // Fetch and open receipt automatically
+  const openReceipt = async (expenseId) => {
+    try {
+      const blob = await handleFetchReceipt(expenseId);
+
+      const url = URL.createObjectURL(blob);
+      setReceipt({ url, type: blob.type });
+
+      // Optional: open in new tab
+      window.open(url);
+    } catch (err) {
+      console.error("Failed to open receipt:", err);
+    }
+  };
+
+  // Clear currently selected receipt
+  const clearReceipt = () => {
+    if (receipt?.url) {
+      URL.revokeObjectURL(receipt.url); // free memory
+      setReceipt(null);
     }
   };
 
@@ -41,7 +64,9 @@ export function ReceiptProvider({ children }) {
     <ReceiptContext.Provider
       value={{
         receipt,
+        openReceipt,
         handleFetchReceipt,
+        clearReceipt,
         showNotification,
       }}
     >
@@ -56,7 +81,7 @@ export function ReceiptProvider({ children }) {
   );
 }
 
-// 🔹 Hook to use receipt context
+// Hook to use the receipt context
 export function useReceipts() {
   const context = useContext(ReceiptContext);
   if (!context) {
@@ -65,8 +90,8 @@ export function useReceipts() {
   return context;
 }
 
-// 🔹 Hook to access only actions
+// Hook to access only actions
 export function useReceiptActions() {
-  const { handleFetchReceipt, showNotification } = useReceipts();
-  return { handleFetchReceipt, showNotification };
+  const { openReceipt, handleFetchReceipt, clearReceipt, showNotification } = useReceipts();
+  return { openReceipt, handleFetchReceipt, clearReceipt, showNotification };
 }

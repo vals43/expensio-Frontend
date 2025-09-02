@@ -25,12 +25,34 @@ api.interceptors.request.use(
 );
 
 // 🔹 GET /receipts/{id}
-export const fetchReceiptById = async (id) => {
-  try {
-    const response = await api.get(`/receipts/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error(`Error fetching receipt with id ${id}:`, error);
-    throw error;
-  }
-};
+// Fetch the receipt as arraybuffer with auth
+export const fetchReceiptByExpenseId = async (expenseId) => {
+    const token = getToken();
+    const response = await api.get(`/receipts/${expenseId}`, {
+      responseType: 'arraybuffer',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  
+    const contentType = response.headers['content-type'];
+    // Convert arraybuffer to Blob
+    const blob = new Blob([response.data], { type: contentType });
+    return blob;
+  };
+  
+  // Open the receipt in browser
+ export const openReceipt = async (expenseId) => {
+    try {
+      const blob = await fetchReceiptByExpenseId(expenseId);
+  
+      // Convert blob to object URL
+      const url = URL.createObjectURL(blob);
+  
+      setSelectedReceipt({ url, type: blob.type });
+  
+      // Optional: open in new tab automatically
+      window.open(url);
+    } catch (err) {
+      console.error("Failed to fetch receipt:", err);
+    }
+  };
+  

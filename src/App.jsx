@@ -5,6 +5,7 @@ import { UserProvider } from './api/user/userContext';
 import { IncomeProvider } from './api/incomes/getJsonIncomes';
 import { ExpenseProvider } from './api/expenses/expenseContext';
 import { CategoryProvider } from './api/category/categoryContext';
+import { ReceiptProvider } from './api/receipt/receiptContext';
 export default function App() {
   return (
     <ThemeProvider>
@@ -12,8 +13,9 @@ export default function App() {
         <IncomeProvider>
           <ExpenseProvider>
             <CategoryProvider>
-              
-          <AppRouter />
+              <ReceiptProvider>
+                <AppRouter />
+              </ReceiptProvider>
             </CategoryProvider>
           </ExpenseProvider>
         </IncomeProvider>
