@@ -1,4 +1,3 @@
-// src/components/expenses/ExpenseList.jsx
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -15,6 +14,8 @@ import {
 import Button from "../ui/Button";
 import { useExpenses, useExpenseActions } from "../../api/expenses/expenseContext";
 import { useReceiptActions } from "../../api/receipt/receiptContext";
+import ExpenseForm from "./ExpenseForm";
+import { openReceipt } from "../../api/receipt/receiptService";
 
 // UI subcomponents
 const Card = ({ children, className }) => (
@@ -49,6 +50,8 @@ const ExpenseList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
   const [sortOrder, setSortOrder] = useState("desc");
+  const [isFormOpen, setIsFormOpen] = useState(false); // State to control form visibility
+  const [selectedExpense, setSelectedExpense] = useState(null); // State to hold the expense being edited
 
   // Formatters
   const formatDate = (dateString) =>
@@ -107,12 +110,20 @@ const ExpenseList = () => {
 
   const handleOpenReceipt = async (expenseId) => {
     try {
-      const blob = await handleFetchReceipt(expenseId); // fetch Blob from context
-      const url = URL.createObjectURL(blob);
-      setSelectedReceipt({ url, type: blob.type });
+      await openReceipt(expenseId, setSelectedReceipt); // Use the updated service function
     } catch (err) {
-      console.error("Failed to fetch receipt:", err);
+      console.error(`Failed to fetch receipt for ID ${expenseId}:`, err.message, err.response?.data);
     }
+  };
+
+  const handleOpenUpdateForm = (expense) => {
+    setSelectedExpense(expense); // Set the expense to edit
+    setIsFormOpen(true); // Open the form
+  };
+
+  const handleCloseForm = () => {
+    setIsFormOpen(false); // Close the form
+    setSelectedExpense(null); // Clear the selected expense
   };
 
   return (
@@ -203,7 +214,7 @@ const ExpenseList = () => {
           >
             {filteredTransactions.map((t) => (
               <motion.div key={t.id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}>
-                <Card className="hover:shadow-2xl shadow-xl transition-all duration-300 hover:scale-[1.02] rounded-xl">
+                <Card className="hover:shadow-2xl shadow-xl border-l-4 border-b-4 border-gray-200 dark:border-gray-700 transition-all duration-300 hover:scale-[1.02] rounded-xl">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -220,7 +231,7 @@ const ExpenseList = () => {
                               <ReceiptIcon className="h-4 w-4" />
                             </Button>
                           )}
-                          <Button variant="ghost" size="sm" onClick={() => handleUpdateExpense(t.id, { ...t })}>
+                          <Button variant="ghost" size="sm" onClick={() => handleOpenUpdateForm(t)}>
                             <EditIcon className="h-4 w-4" />
                           </Button>
                           <Button
@@ -228,7 +239,7 @@ const ExpenseList = () => {
                             size="sm"
                             onClick={() => handleDelete(t.id)}
                             disabled={isDeleting === t.id}
-                            className="hover:bg-destructive hover:text-white"
+                            className="hover:bg-red-600 hover:text-white rounded-3xl transition-all duration-100"
                           >
                             {isDeleting === t.id ? (
                               <div className="w-4 h-4 border-2 border-current border-t-transparent animate-spin rounded-full" />
@@ -293,10 +304,10 @@ const ExpenseList = () => {
                             <ReceiptIcon className="h-4 w-4" />
                           </Button>
                         )}
-                        <Button variant="ghost" size="sm" onClick={() => handleUpdateExpense(t.id, { ...t })}>
+                        <Button variant="ghost" size="sm" onClick={() => handleOpenUpdateForm(t)}>
                           <EditIcon className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(t.id)} disabled={isDeleting === t.id}>
+                        <Button variant="danger" size="sm" onClick={() => handleDelete(t.id)} disabled={isDeleting === t.id}>
                           {isDeleting === t.id ? (
                             <div className="w-4 h-4 border-2 border-current border-t-transparent animate-spin rounded-full" />
                           ) : (
@@ -355,7 +366,30 @@ const ExpenseList = () => {
                   <p className="text-muted-foreground">No receipt available</p>
                 )}
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
+      {/* Expense Form */}
+      <AnimatePresence>
+        {isFormOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md"
+            >
+              <ExpenseForm
+                initialData={selectedExpense}
+                onClose={handleCloseForm}
+              />
             </motion.div>
           </motion.div>
         )}

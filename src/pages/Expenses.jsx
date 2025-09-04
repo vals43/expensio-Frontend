@@ -159,12 +159,6 @@ const Expenses = () => {
       <Card className="md:col-span-2 p-6 bg-white dark:bg-dark-card">
         <ExpenseActivityCard status={"expenses"} data={data} />
       </Card>
-      <Card className="md:col-span-2 p-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
-          Add New Expense
-        </h3>
-        <TransactionForm type="expense" />
-      </Card>
     </div>}
     <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add Expense" maxWidth="md">
       <ExpenseForm  onSuccess={() => setIsModalOpen(false)} />

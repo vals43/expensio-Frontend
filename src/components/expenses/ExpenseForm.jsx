@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 import {
   PlusIcon,
   CalendarIcon,
@@ -9,13 +8,13 @@ import {
   XIcon,
   UploadIcon,
   RepeatIcon,
-} from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
-import { useExpenseActions } from "../../api/expenses/expenseContext" // ⬅️ Importez le hook ici
-import CategoryDropdown from "../category/categoryDropdown"
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useExpenseActions } from "../../api/expenses/expenseContext";
+import CategoryDropdown from "../category/categoryDropdown";
 
 const ExpenseForm = ({ initialData = null, onClose }) => {
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     amount: "",
     date: new Date().toISOString().slice(0, 16),
@@ -24,128 +23,140 @@ const ExpenseForm = ({ initialData = null, onClose }) => {
     type: "one-time",
     startDate: "",
     endDate: "",
-    receipt: null,
-  })
-  const [errors, setErrors] = useState({})
-  const [isVisible, setIsVisible] = useState(true)
+    receipt: null, // Store new file as DataURL or null
+    existingReceipt: null, // Store existing receipt reference (e.g., URL or ID)
+  });
+  const [errors, setErrors] = useState({});
+  const [isVisible, setIsVisible] = useState(true);
 
-  // ⬅️ Utilisez le hook pour accéder aux actions
-  const { handleCreateExpense, handleUpdateExpense } = useExpenseActions()
+  const { handleCreateExpense, handleUpdateExpense } = useExpenseActions();
 
   useEffect(() => {
     if (initialData) {
       setFormData({
         amount: initialData.amount || "",
-        date: initialData.date ? new Date(initialData.date).toISOString().slice(0, 16) : "",
-        categoryId: initialData.categoryId || "",
+        date: initialData.date
+          ? new Date(initialData.date).toISOString().slice(0, 16)
+          : "",
+        // Handle categoryId correctly if initialData has a category object
+        categoryId: initialData.category?.id || initialData.categoryId || "",
         description: initialData.description || "",
         type: initialData.type || "one-time",
-        startDate: initialData.startDate ? new Date(initialData.startDate).toISOString().slice(0, 16) : "",
-        endDate: initialData.endDate ? new Date(initialData.endDate).toISOString().slice(0, 16) : "",
-        receipt: initialData.receipt || null,
-      })
+        startDate: initialData.startDate
+          ? new Date(initialData.startDate).toISOString().slice(0, 16)
+          : "",
+        endDate: initialData.endDate
+          ? new Date(initialData.endDate).toISOString().slice(0, 16)
+          : "",
+        receipt: null, // New receipt will be set only on file upload
+        existingReceipt: initialData.receipt || null, // Preserve existing receipt
+      });
     }
-  }, [initialData])
+  }, [initialData]);
 
   const validateForm = () => {
-    const newErrors = {}
+    const newErrors = {};
 
     if (!formData.amount || isNaN(Number(formData.amount)) || Number(formData.amount) <= 0) {
-      newErrors.amount = "Please enter a valid amount"
+      newErrors.amount = "Please enter a valid amount";
     }
 
     if (!formData.date) {
-      newErrors.date = "Please select a date"
+      newErrors.date = "Please select a date";
     }
 
     if (!formData.categoryId) {
-      newErrors.categoryId = "Please select a category"
+      newErrors.categoryId = "Please select a category";
     }
 
     if (formData.type === "recurring") {
       if (!formData.startDate) {
-        newErrors.startDate = "Start date is required for recurring expenses"
+        newErrors.startDate = "Start date is required for recurring expenses";
       }
       if (!formData.endDate) {
-        newErrors.endDate = "End date is required for recurring expenses"
+        newErrors.endDate = "End date is required for recurring expenses";
       }
-      if (formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
-        newErrors.endDate = "End date must be after start date"
+      if (
+        formData.startDate &&
+        formData.endDate &&
+        new Date(formData.startDate) >= new Date(formData.endDate)
+      ) {
+        newErrors.endDate = "End date must be after start date";
       }
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }))
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0]
+    const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onload = (e) => {
-        setFormData((prev) => ({ ...prev, receipt: e.target.result }))
-      }
-      reader.readAsDataURL(file)
+        setFormData((prev) => ({ ...prev, receipt: e.target.result }));
+      };
+      reader.readAsDataURL(file);
     }
-  }
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!validateForm()) return
-    setIsLoading(true)
+    e.preventDefault();
+    if (!validateForm()) return;
+    setIsLoading(true);
 
     try {
       const expenseData = {
-        ...formData,
         amount: Number(formData.amount),
         date: new Date(formData.date).toISOString(),
-        startDate: formData.startDate ? new Date(formData.startDate).toISOString() : undefined,
-        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : undefined,
-      }
+        categoryId: formData.categoryId,
+        description: formData.description || undefined,
+        type: formData.type,
+        startDate:
+          formData.type === "recurring" && formData.startDate
+            ? new Date(formData.startDate).toISOString()
+            : undefined,
+        endDate:
+          formData.type === "recurring" && formData.endDate
+            ? new Date(formData.endDate).toISOString()
+            : undefined,
+        // Only include receipt if a new file was uploaded
+        receipt: formData.receipt || undefined,
+      };
 
-      // ⬅️ Remplacez l'appel de onSubmit par les actions du contexte
       if (initialData) {
-        await handleUpdateExpense(initialData.id, expenseData)
+        await handleUpdateExpense(initialData.id, expenseData);
       } else {
-        await handleCreateExpense(expenseData)
+        await handleCreateExpense(expenseData);
       }
 
-      setIsVisible(false)
+      setIsVisible(false);
       setTimeout(() => {
-        if (onClose) onClose()
-      }, 400)
+        if (onClose) onClose();
+      }, 400);
     } catch (error) {
-      console.error("Error submitting expense:", error)
+      console.error("Error submitting expense:", error);
+      setErrors((prev) => ({
+        ...prev,
+        form: "Failed to save expense. Please try again.",
+      }));
     } finally {
-      setIsLoading(false)
-      if (!initialData) {
-        setFormData({
-          amount: "",
-          date: new Date().toISOString().slice(0, 16),
-          categoryId: "",
-          description: "",
-          type: "one-time",
-          startDate: "",
-          endDate: "",
-          receipt: null,
-        })
-      }
+      setIsLoading(false);
     }
-  }
-
+  };
 
   const handleCloseClick = () => {
-    setIsVisible(false)
+    setIsVisible(false);
     setTimeout(() => {
-      if (onClose) onClose()
-    }, 400)
-  }
+      if (onClose) onClose();
+    }, 400);
+  };
 
   return (
     <AnimatePresence>
@@ -199,9 +210,16 @@ const ExpenseForm = ({ initialData = null, onClose }) => {
               </div>
 
               <motion.form onSubmit={handleSubmit} className="space-y-6">
+                {/* Form Error */}
+                {errors.form && (
+                  <p className="text-sm text-red-500 font-medium">{errors.form}</p>
+                )}
+
                 {/* Amount */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Amount *</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                    Amount *
+                  </label>
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors">
                       <DollarSignIcon className="h-5 w-5" />
@@ -215,15 +233,23 @@ const ExpenseForm = ({ initialData = null, onClose }) => {
                       min="0.01"
                       step="0.01"
                       required
-                      className={`block w-full pl-12 pr-4 py-4 rounded-xl text-lg font-medium bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30 ${errors.amount ? "border-red-400 focus:border-red-400 focus:ring-red-200" : ""}`}
+                      className={`block w-full pl-12 pr-4 py-4 rounded-xl text-lg font-medium bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30 ${
+                        errors.amount
+                          ? "border-red-400 focus:border-red-400 focus:ring-red-200"
+                          : ""
+                      }`}
                     />
                   </div>
-                  {errors.amount && <p className="text-sm text-red-500 font-medium">{errors.amount}</p>}
+                  {errors.amount && (
+                    <p className="text-sm text-red-500 font-medium">{errors.amount}</p>
+                  )}
                 </div>
 
                 {/* Date */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Date *</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                    Date *
+                  </label>
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
                       <CalendarIcon className="h-5 w-5" />
@@ -234,13 +260,18 @@ const ExpenseForm = ({ initialData = null, onClose }) => {
                       value={formData.date}
                       onChange={handleChange}
                       required
-                      className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30 ${errors.date ? "border-red-400 focus:border-red-400 focus:ring-red-200" : ""}`}
+                      className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30 ${
+                        errors.date
+                          ? "border-red-400 focus:border-red-400 focus:ring-red-200"
+                          : ""
+                      }`}
                     />
                   </div>
-                  {errors.date && <p className="text-sm text-red-500 font-medium">{errors.date}</p>}
+                  {errors.date && (
+                    <p className="text-sm text-red-500 font-medium">{errors.date}</p>
+                  )}
                 </div>
 
-                {/* Category */}
                 {/* Category */}
                 <CategoryDropdown
                   value={formData.categoryId}
@@ -248,10 +279,11 @@ const ExpenseForm = ({ initialData = null, onClose }) => {
                   errors={errors}
                 />
 
-
                 {/* Type */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Type</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                    Type
+                  </label>
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors">
                       <RepeatIcon className="h-5 w-5" />
@@ -290,10 +322,18 @@ const ExpenseForm = ({ initialData = null, onClose }) => {
                             name="startDate"
                             value={formData.startDate}
                             onChange={handleChange}
-                            className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30 ${errors.startDate ? "border-red-400 focus:border-red-400 focus:ring-red-200" : ""}`}
+                            className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30 ${
+                              errors.startDate
+                                ? "border-red-400 focus:border-red-400 focus:ring-red-200"
+                                : ""
+                            }`}
                           />
                         </div>
-                        {errors.startDate && <p className="text-sm text-red-500 font-medium">{errors.startDate}</p>}
+                        {errors.startDate && (
+                          <p className="text-sm text-red-500 font-medium">
+                            {errors.startDate}
+                          </p>
+                        )}
                       </div>
 
                       {/* End Date */}
@@ -310,10 +350,16 @@ const ExpenseForm = ({ initialData = null, onClose }) => {
                             name="endDate"
                             value={formData.endDate}
                             onChange={handleChange}
-                            className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30 ${errors.endDate ? "border-red-400 focus:border-red-400 focus:ring-red-200" : ""}`}
+                            className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30 ${
+                              errors.endDate
+                                ? "border-red-400 focus:border-red-400 focus:ring-red-200"
+                                : ""
+                            }`}
                           />
                         </div>
-                        {errors.endDate && <p className="text-sm text-red-500 font-medium">{errors.endDate}</p>}
+                        {errors.endDate && (
+                          <p className="text-sm text-red-500 font-medium">{errors.endDate}</p>
+                        )}
                       </div>
                     </motion.div>
                   </AnimatePresence>
@@ -339,6 +385,7 @@ const ExpenseForm = ({ initialData = null, onClose }) => {
                   </div>
                 </div>
 
+                {/* Receipt */}
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
                     Receipt <span className="text-gray-400 font-normal">(Optional)</span>
@@ -355,7 +402,14 @@ const ExpenseForm = ({ initialData = null, onClose }) => {
                     />
                   </div>
                   {formData.receipt && (
-                    <p className="text-sm text-green-600 dark:text-green-400">Receipt uploaded successfully</p>
+                    <p className="text-sm text-green-600 dark:text-green-400">
+                      New receipt uploaded successfully
+                    </p>
+                  )}
+                  {formData.existingReceipt && !formData.receipt && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Existing receipt will be retained
+                    </p>
                   )}
                 </div>
 
@@ -372,7 +426,11 @@ const ExpenseForm = ({ initialData = null, onClose }) => {
                       ) : (
                         <PlusIcon className="h-5 w-5" />
                       )}
-                      {isLoading ? "Processing..." : initialData ? "Update Expense" : "Add Expense"}
+                      {isLoading
+                        ? "Processing..."
+                        : initialData
+                        ? "Update Expense"
+                        : "Add Expense"}
                     </div>
                   </button>
                 </div>
@@ -382,7 +440,7 @@ const ExpenseForm = ({ initialData = null, onClose }) => {
         </motion.div>
       )}
     </AnimatePresence>
-  )
-}
+  );
+};
 
-export default ExpenseForm
+export default ExpenseForm;

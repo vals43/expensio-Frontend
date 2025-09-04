@@ -1,4 +1,3 @@
-// src/context/categoryContext.jsx
 import { useEffect, useState, createContext, useContext } from "react";
 import {
   fetchAllCategories,
@@ -79,7 +78,8 @@ export function CategoryProvider({ children }) {
       showNotification("success", "Category deleted successfully");
     } catch (error) {
       console.error("Erreur lors de la suppression de la catégorie:", error);
-      showNotification("error", "Failed to delete category");
+      showNotification("error", "Failed to delete category there is expense re-attached");
+      
       throw error;
     }
   };

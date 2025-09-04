@@ -76,6 +76,8 @@ export function ExpenseProvider({ children }) {
   };
 
   const handleUpdateExpense = async (id, updatedData) => {
+    console.log("Updating expense with ID:", id);
+    console.log("Updated data:", updatedData);
     try {
       const response = await updateExistingExpense(id, updatedData);
       setExpenses((prev) =>

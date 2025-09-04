@@ -6,6 +6,7 @@ import { IncomeProvider } from './api/incomes/getJsonIncomes';
 import { ExpenseProvider } from './api/expenses/expenseContext';
 import { CategoryProvider } from './api/category/categoryContext';
 import { ReceiptProvider } from './api/receipt/receiptContext';
+import { TransactionProvider } from './context/TransactionContext';
 export default function App() {
   return (
     <ThemeProvider>
@@ -14,7 +15,9 @@ export default function App() {
           <ExpenseProvider>
             <CategoryProvider>
               <ReceiptProvider>
+                <TransactionProvider>
                 <AppRouter />
+                </TransactionProvider>
               </ReceiptProvider>
             </CategoryProvider>
           </ExpenseProvider>

@@ -22,6 +22,8 @@ const Header = ({ openSidebar }) => {
         return 'Account';
       case '/setting':
         return 'Setting';
+      case '/category':
+        return 'Category';
       default:
         return 'Dashboard';
     }

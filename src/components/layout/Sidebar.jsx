@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate, useNavigation } from 'react-router-dom';
-import { HomeIcon, TrendingUpIcon, TrendingDownIcon, LogOutIcon, XIcon, User } from 'lucide-react';
+import { HomeIcon, TrendingUpIcon, TrendingDownIcon, LogOutIcon, XIcon, User, Clipboard } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { logout } from '../../api/auth/authService';
 import { useTheme } from '../theme/ThemeProvider';
@@ -15,8 +15,10 @@ const Sidebar = ({ closeSidebar }) => {
     { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
     { name: 'Income', href: '/income', icon: TrendingUpIcon },
     { name: 'Expenses', href: '/expenses', icon: TrendingDownIcon },
+    { name: 'Category', href: '/category', icon: Clipboard },
     { name: 'Account', href: '/profile', icon: User },
   ];
+  
 
   const handleLogout = () => {
     logout();
@@ -30,7 +32,7 @@ const Sidebar = ({ closeSidebar }) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* En-tête de la sidebar */}
+          {/* En-tête de la sidebar */}
       <div className="flex items-center h-16 px-4 border-b border-light-border dark:border-dark-border">
         <Link to="/dashboard" className="flex overflow-visible items-center">
           <span className="ml-2 text-xl font-bold text-light-text dark:text-dark-text">

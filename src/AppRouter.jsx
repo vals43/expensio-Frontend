@@ -10,6 +10,7 @@ import Income from './pages/Income';
 import { TransactionProvider } from './context/TransactionContext';
 import Expenses from './pages/Expenses';
 import { ProtectedRoute } from './context/ProtectedRoute';
+import { CategoryManager } from './components/category/category-manager';
 
 export function AppRouter() {
   return (
@@ -34,27 +35,31 @@ export function AppRouter() {
             </Layout>
           </ProtectedRoute>
         } />
-        
+
         <Route path="/income" element={
           <ProtectedRoute>
             <Layout>
-              <TransactionProvider>
                 <Income />
-              </TransactionProvider>
             </Layout>
           </ProtectedRoute>
         } />
-        
+
         <Route path="/expenses" element={
           <ProtectedRoute>
             <Layout>
-              <TransactionProvider>
                 <Expenses />
-              </TransactionProvider>
             </Layout>
           </ProtectedRoute>
         } />
-        
+
+        <Route path="/category" element={
+          <ProtectedRoute>
+            <Layout>
+              <CategoryManager />
+            </Layout>
+          </ProtectedRoute>
+        } />
+
         <Route path="/profile" element={
           <ProtectedRoute>
             <Layout>

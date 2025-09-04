@@ -1,4 +1,4 @@
-// src/services/receiptService.jsx
+// src/services/receiptService.js
 import axios from "axios";
 import { getToken } from "../auth/authService";
 
@@ -27,32 +27,37 @@ api.interceptors.request.use(
 // 🔹 GET /receipts/{id}
 // Fetch the receipt as arraybuffer with auth
 export const fetchReceiptByExpenseId = async (expenseId) => {
-    const token = getToken();
+  try {
     const response = await api.get(`/receipts/${expenseId}`, {
-      responseType: 'arraybuffer',
-      headers: { Authorization: `Bearer ${token}` },
+      responseType: "arraybuffer", // Fetch as binary data
     });
-  
-    const contentType = response.headers['content-type'];
-    // Convert arraybuffer to Blob
+    const contentType = response.headers["content-type"];
     const blob = new Blob([response.data], { type: contentType });
     return blob;
-  };
-  
-  // Open the receipt in browser
- export const openReceipt = async (expenseId) => {
-    try {
-      const blob = await fetchReceiptByExpenseId(expenseId);
-  
-      // Convert blob to object URL
-      const url = URL.createObjectURL(blob);
-  
+  } catch (error) {
+    console.error("Error fetching receipt:", error.message, error.response?.data);
+    throw error; // Propagate the error for handling upstream
+  }
+};
+
+// 🔹 Open the receipt (to be used in a component)
+// Note: setSelectedReceipt should be passed from the calling component
+export const openReceipt = async (expenseId, setSelectedReceipt) => {
+  try {
+    const blob = await fetchReceiptByExpenseId(expenseId);
+
+    const url = URL.createObjectURL(blob);
+
+    // Update state with the receipt data (handled by the component)
+    if (setSelectedReceipt) {
       setSelectedReceipt({ url, type: blob.type });
-  
-      // Optional: open in new tab automatically
-      window.open(url);
-    } catch (err) {
-      console.error("Failed to fetch receipt:", err);
     }
-  };
-  
+
+    // Optional: open in new tab automatically
+    window.open(url);
+    return url; // Return URL for further use if needed
+  } catch (err) {
+    console.error("Failed to fetch receipt:", err.message, err.response?.data);
+    throw err; // Propagate error for component handling
+  }
+};

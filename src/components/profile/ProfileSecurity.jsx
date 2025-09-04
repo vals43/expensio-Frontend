@@ -12,6 +12,8 @@ export default function ProfileSecurity() {
   useEffect(() => {
     if (navigator.userAgentData) {
       const { brands, platform } = navigator.userAgentData;
+      console.log(navigator);
+      
       
       
       let brandName = "Inconnue";
@@ -74,7 +76,6 @@ export default function ProfileSecurity() {
         <div className="border-t pt-6">
           <div className="flex justify-between mb-2">
             <label className="block font-medium">Sessions actives</label>
-            <button className="text-blue-600 text-sm">Gérer</button>
           </div>
           <div className="bg-gray-50 dark:bg-dark-border p-3 rounded-lg">
             <div className="flex items-center justify-between">
