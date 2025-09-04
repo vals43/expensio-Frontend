@@ -1,41 +1,75 @@
-import React, { useState, useMemo } from 'react';
-import Card from '../ui/Card';
-import { motion, AnimatePresence } from 'framer-motion';
-import { TrashIcon, ArrowUpIcon, ArrowDownIcon, SearchIcon, PencilIcon } from 'lucide-react';
-import { useIncomes, useIncomeActions } from '../../api/incomes/getJsonIncomes';
-import { ConfirmDeleteModal } from '../ui/ConfirmDeleteModal';
-import TransactionForm from './TransactionForm';
+import { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  LayoutGridIcon,
+  ListIcon,
+  EditIcon,
+  TrashIcon,
+  CalendarIcon,
+  FileTextIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  SearchIcon,
+} from "lucide-react";
+import Button from "../ui/Button";
+import { useIncomes, useIncomeActions } from "../../api/incomes/getJsonIncomes";
+import TransactionForm from "./TransactionForm";
+
+// === UI Subcomponents ===
+const Card = ({ children, className }) => (
+  <div className={`rounded-lg bg-white dark:bg-dark-card shadow-sm p-4 ${className}`}>{children}</div>
+);
+const CardContent = ({ children, className }) => <div className={`p-6 pt-0 ${className}`}>{children}</div>;
+const CardHeader = ({ children, className }) => <div className={`flex flex-col space-y-1.5 p-6 ${className}`}>{children}</div>;
+const CardTitle = ({ children, className }) => <h3 className={`text-xl font-semibold tracking-tight ${className}`}>{children}</h3>;
+const CardAction = ({ children }) => <div className="ml-auto">{children}</div>;
+
+const Table = ({ children }) => (
+  <div className="w-full overflow-auto">
+    <table className="w-full caption-bottom text-sm">{children}</table>
+  </div>
+);
+const TableBody = ({ children }) => <tbody>{children}</tbody>;
+const TableCell = ({ children, className }) => <td className={`p-4 align-middle ${className}`}>{children}</td>;
+const TableHead = ({ children, className }) => <th className={`h-12 px-4 text-left font-medium text-muted-foreground ${className}`}>{children}</th>;
+const TableHeader = ({ children }) => <thead className="[&_tr]:border-b">{children}</thead>;
+const TableRow = ({ children, className }) => (
+  <tr className={`border-b transition-colors hover:bg-muted/50 ${className}`}>{children}</tr>
+);
 
 const TransactionList = ({ type }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortOrder, setSortOrder] = useState('desc');
-  const [filterCategory, setFilterCategory] = useState('all');
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState(null);
-  const [editTransaction, setEditTransaction] = useState(null);
-
   const { incomes } = useIncomes();
   const { handleDeleteIncome } = useIncomeActions();
   const transactions = incomes || [];
 
+  const [viewMode, setViewMode] = useState("card");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [sortOrder, setSortOrder] = useState("desc");
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editTransaction, setEditTransaction] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(null);
+
+  // Formatters
   const formatDate = (dateString) =>
-    new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(dateString));
+    new Intl.DateTimeFormat("en-US", { year: "numeric", month: "short", day: "numeric" }).format(new Date(dateString));
+  const formatAmount = (amount) =>
+    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(parseFloat(amount));
 
+  const getTypeColor = (transactionType) =>
+    transactionType === "income" ? "text-green-600 dark:text-green-500" : "text-red-600 dark:text-red-500";
   const getTypeIcon = (transactionType) =>
-    transactionType === 'income' ? (
-      <ArrowUpIcon className="h-5 w-5 text-green-600 dark:text-green-500" />
-    ) : (
-      <ArrowDownIcon className="h-5 w-5 text-red-600 dark:text-red-500" />
-    );
+    transactionType === "income" ? <ArrowUpIcon className="h-5 w-5" /> : <ArrowDownIcon className="h-5 w-5" />;
 
+  // Filters
   const uniqueFilters = useMemo(() => {
-    const setValues = new Set(transactions.map(t => (type === 'income' ? t.source : t.category)).filter(Boolean));
+    const setValues = new Set(transactions.map((t) => (type === "income" ? t.source : t.category)).filter(Boolean));
     return Array.from(setValues);
   }, [transactions, type]);
 
   const filteredTransactions = useMemo(() => {
     const searchLower = searchTerm.toLowerCase();
-    let result = transactions.filter(t => {
+    let result = transactions.filter((t) => {
       const matchesSearch =
         t.description?.toLowerCase().includes(searchLower) ||
         t.category?.toLowerCase().includes(searchLower) ||
@@ -43,202 +77,259 @@ const TransactionList = ({ type }) => {
         t.amount.toString().includes(searchTerm);
 
       const matchesFilter =
-        filterCategory === 'all' || (type === 'income' ? t.source === filterCategory : t.category === filterCategory);
+        filterCategory === "all" ||
+        (type === "income" ? t.source === filterCategory : t.category === filterCategory);
 
       return matchesSearch && matchesFilter;
     });
 
     result.sort((a, b) =>
-      sortOrder === 'asc' ? new Date(a.date) - new Date(b.date) : new Date(b.date) - new Date(a.date)
+      sortOrder === "asc" ? new Date(a.date) - new Date(b.date) : new Date(b.date) - new Date(a.date)
     );
     return result;
   }, [transactions, searchTerm, filterCategory, sortOrder, type]);
 
-  const handleDeleteClick = (transaction) => {
-    setSelectedTransaction(transaction);
-    setDeleteModalOpen(true);
-  };
+  const total = filteredTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+  const average = filteredTransactions.length ? total / filteredTransactions.length : 0;
 
-  const handleConfirmDelete = async () => {
-    if (selectedTransaction) {
-      await handleDeleteIncome(selectedTransaction.id);
-      setDeleteModalOpen(false);
-      setSelectedTransaction(null);
+  const handleDelete = async (id) => {
+    setIsDeleting(id);
+    try {
+      await handleDeleteIncome(id);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsDeleting(null);
     }
   };
 
-  const handleEditClick = (transaction) => {
+  const handleOpenUpdateForm = (transaction) => {
     setEditTransaction(transaction);
+    setIsFormOpen(true);
+  };
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
+    setEditTransaction(null);
   };
 
   return (
-    <>
-      <Card className="overflow-hidden bg-gray-300 dark:bg-dark-card">
-        {/* Header */}
-        <div className="py-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-              {type === 'all' ? 'All Transactions' : type === 'income' ? 'Income Transactions' : 'Expense Transactions'}
-            </h3>
-            <div className="flex flex-wrap gap-3 items-center">
-              {/* Search */}
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <SearchIcon className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md w-48 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-dark-card dark:text-gray-100"
-                />
+    <div className="w-full space-y-6">
+      {/* Header */}
+      <div className="shadow-xl">
+        <div className="bg-primary p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-primary-foreground tracking-tight">
+              {type === "income" ? "INCOMES" : type === "expense" ? "EXPENSES" : "TRANSACTIONS"}
+            </h2>
+            <div className="h-1 w-16 bg-accent mt-2" />
+          </div>
+          <div className="flex flex-wrap gap-3 items-center">
+            {/* Search */}
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <SearchIcon className="h-5 w-5 text-gray-400" />
               </div>
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border rounded-md w-48 dark:bg-dark-card dark:text-gray-100"
+              />
+            </div>
 
-              {/* Filter */}
-              <select
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-dark-card dark:text-gray-100"
-              >
-                <option value="all">All {type === 'income' ? 'Sources' : 'Categories'}</option>
-                {uniqueFilters.map((f, idx) => (
-                  <option key={idx} value={f}>
-                    {f}
-                  </option>
-                ))}
-              </select>
+            {/* Filter */}
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="px-3 py-2 border rounded-md dark:bg-dark-card dark:text-gray-100"
+            >
+              <option value="all">All {type === "income" ? "Sources" : "Categories"}</option>
+              {uniqueFilters.map((f, idx) => (
+                <option key={idx} value={f}>
+                  {f}
+                </option>
+              ))}
+            </select>
 
-              {/* Sort */}
-              <select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-dark-card dark:text-gray-100"
-              >
-                <option value="desc">Newest first</option>
-                <option value="asc">Oldest first</option>
-              </select>
+            {/* Sort */}
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              className="px-3 py-2 rounded-md dark:bg-dark-card dark:text-gray-100"
+            >
+              <option value="desc">Newest first</option>
+              <option value="asc">Oldest first</option>
+            </select>
+
+            {/* Toggle View */}
+            <div className="flex items-center gap-2 bg-primary-foreground/10 p-1 rounded">
+              <Button variant={viewMode === "card" ? "default" : "ghost"} size="sm" onClick={() => setViewMode("card")}>
+                <LayoutGridIcon className="h-4 w-4 mr-1" /> Cards
+              </Button>
+              <Button variant={viewMode === "list" ? "default" : "ghost"} size="sm" onClick={() => setViewMode("list")}>
+                <ListIcon className="h-4 w-4 mr-1" /> List
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead>
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Description</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              <AnimatePresence>
-                {filteredTransactions.length > 0 ? (
-                  filteredTransactions.map((t) => (
-                    <motion.tr
-                      key={t.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="hover:bg-gray-50 cursor-pointer dark:hover:bg-dark-border"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div
-                            className={`p-2 rounded-full ${
-                              type === 'income' ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900'
-                            }`}
-                          >
-                            {getTypeIcon(type)}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{formatDate(t.date)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                        {type === 'income' ? t.source : t.category}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">{t.description || '-'}</td>
-                      <td
-                        className={`px-6 py-4 whitespace-nowrap text-sm font-medium text-right ${
-                          type === 'income' ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
-                        }`}
-                      >
-                        {type === 'income' ? '+' : '-'}
-                        {t.amount} Ar
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm flex items-center justify-end gap-3">
-                        <button
-                          onClick={() => handleEditClick(t)}
-                          className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-500"
-                        >
-                          <PencilIcon className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(t)}
-                          className="text-gray-400 hover:text-red-600 dark:hover:text-red-500"
-                        >
-                          <TrashIcon className="h-5 w-5" />
-                        </button>
-                      </td>
-                    </motion.tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                      No transactions found
-                    </td>
-                  </tr>
-                )}
-              </AnimatePresence>
-            </tbody>
-          </table>
+        {/* Stats */}
+        <div className="p-6 border-b-2 border-border grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="text-center">
+            <div className="text-2xl font-bold">{filteredTransactions.length}</div>
+            <div className="text-sm text-muted-foreground uppercase">TOTAL</div>
+          </div>
+          <div className="text-center">
+            <div className={`text-2xl font-bold ${getTypeColor(type)}`}>{formatAmount(total)}</div>
+            <div className="text-sm text-muted-foreground uppercase">AMOUNT</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold">{formatAmount(average)}</div>
+            <div className="text-sm text-muted-foreground uppercase">AVERAGE</div>
+          </div>
         </div>
-      </Card>
+      </div>
 
-      {/* Modal de confirmation */}
-      {selectedTransaction && (
-        <ConfirmDeleteModal
-          isOpen={deleteModalOpen}
-          onClose={() => setDeleteModalOpen(false)}
-          itemName={selectedTransaction.source || selectedTransaction.category}
-          onConfirm={handleConfirmDelete}
-        />
-      )}
-
-      {/* Modal d'édition */}
-      {editTransaction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
+      {/* Content */}
+      <AnimatePresence mode="wait">
+        {viewMode === "card" ? (
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="bg-white dark:bg-dark-card rounded-lg shadow-lg p-6 w-full max-w-md"
+            key="card-view"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
-            <TransactionForm
-              initialData={editTransaction}
-              onSubmit={() => {
-                setEditTransaction(null);
-              }}
-            />
-            <div className="mt-4 text-right">
-              <button
-                onClick={() => setEditTransaction(null)}
-                className="text-sm text-gray-500 dark:text-gray-300 hover:underline"
-              >
-                Cancel
-              </button>
-            </div>
+            {filteredTransactions.map((t) => (
+              <motion.div key={t.id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}>
+                <Card className="hover:shadow-2xl border-l-4 border-b-4 border-gray-200 dark:border-gray-700 transition-all duration-300 hover:scale-[1.02] rounded-xl">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className={getTypeColor(type)}>
+                          {type === "income" ? "+" : "-"} {formatAmount(t.amount)}
+                        </CardTitle>
+                        <div className="flex items-center gap-2 mt-2">
+                          {getTypeIcon(type)}
+                          <span>{type === "income" ? t.source : t.category}</span>
+                        </div>
+                      </div>
+                      <CardAction>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => handleOpenUpdateForm(t)}>
+                            <EditIcon className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => handleDelete(t.id)}
+                            disabled={isDeleting === t.id}
+                          >
+                            {isDeleting === t.id ? (
+                              <div className="w-4 h-4 border-2 border-current border-t-transparent animate-spin rounded-full" />
+                            ) : (
+                              <TrashIcon className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </CardAction>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-2 text-sm">
+                      <CalendarIcon className="h-4 w-4" />
+                      <span>{formatDate(t.date)}</span>
+                    </div>
+                    {t.description && (
+                      <div className="flex items-start gap-2 text-sm mt-2">
+                        <FileTextIcon className="h-4 w-4 mt-0.5" />
+                        <span>{t.description}</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
           </motion.div>
-        </div>
-      )}
-    </>
+        ) : (
+          <motion.div
+            key="list-view"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-card rounded-2xl border-border shadow-2xl dark:bg-dark-card"
+          >
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>AMOUNT</TableHead>
+                  <TableHead>{type === "income" ? "SOURCE" : "CATEGORY"}</TableHead>
+                  <TableHead>DATE</TableHead>
+                  <TableHead>DESCRIPTION</TableHead>
+                  <TableHead className="text-right">ACTIONS</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredTransactions.map((t) => (
+                  <motion.tr key={t.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-muted/30">
+                    <TableCell className={getTypeColor(type)}>
+                      {type === "income" ? "+" : "-"} {formatAmount(t.amount)}
+                    </TableCell>
+                    <TableCell>{type === "income" ? t.source : t.category}</TableCell>
+                    <TableCell>{formatDate(t.date)}</TableCell>
+                    <TableCell>{t.description || "—"}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => handleOpenUpdateForm(t)}>
+                          <EditIcon className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => handleDelete(t.id)}
+                          disabled={isDeleting === t.id}
+                        >
+                          {isDeleting === t.id ? (
+                            <div className="w-4 h-4 border-2 border-current border-t-transparent animate-spin rounded-full" />
+                          ) : (
+                            <TrashIcon className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </motion.tr>
+                ))}
+              </TableBody>
+            </Table>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Transaction Form Modal */}
+      <AnimatePresence>
+        {isFormOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md"
+            >
+              <TransactionForm initialData={editTransaction} onSubmit={handleCloseForm} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
 
 export default TransactionList;
+

@@ -57,7 +57,7 @@ export default function ProfileSecurity() {
   });
 
   return (
-    <div className="bg-white dark:bg-dark-card p-6 rounded-xl shadow-sm mt-6">
+    <div className="bg-white border-l-4 border-b-4 dark:border-dark-border dark:bg-dark-card p-6 rounded-xl shadow-sm mt-6">
       <h3 className="font-medium mb-6">Sécurité</h3>
       <div className="space-y-6">
         <div>

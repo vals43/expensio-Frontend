@@ -167,7 +167,7 @@ export function CategoryManager() {
             return (
               <Card
                 key={category.id}
-                className="group hover:shadow-lg font-bold transition-all duration-200 border-l-4 border-b-4 dark:border-gray-700 dark:bg-gray-800 p-4"
+                className="group hover:shadow-lg font-bold transition-all duration-200 border-l-4 dark:border-gray-700 dark:bg-gray-800 p-4"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">

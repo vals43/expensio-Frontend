@@ -13,15 +13,12 @@ export default function ProfileCard() {
   }
   
     return (
-        <div className="bg-white dark:bg-dark-card p-6 rounded-xl shadow-sm">
+        <div className="bg-white border-l-4 border-b-4 dark:border-dark-border dark:bg-dark-card p-6 rounded-xl shadow-sm">
         <div className="flex flex-col items-center">
           <div className="relative mb-4">
             <div className="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center text-white text-4xl">
               M
             </div>
-            <button className="absolute bottom-0 right-0 bg-white p-2 rounded-full shadow-md">
-              <Camera size={18} className="text-gray-600" />
-            </button>
           </div>
           <h2 className="text-xl font-bold">{user.firstName} {user.lastName}</h2>
           <p className="text-gray-500 mb-4">Member</p>

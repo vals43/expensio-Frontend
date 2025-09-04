@@ -14,7 +14,7 @@ export default function ProfileInfo(){
   }
   
     return (
-        <div className="bg-white dark:bg-dark-card p-6 rounded-xl shadow-sm">
+        <div className="bg-white border-l-4 border-b-4 dark:border-dark-border dark:bg-dark-card p-6 rounded-xl shadow-sm">
         <div className="flex justify-between items-center mb-6">
           <h3 className="font-medium">Personal Information</h3>
 

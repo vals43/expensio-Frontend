@@ -21,7 +21,7 @@ export default function StatProfile(){
   
   
     return (
-        <div className="bg-white dark:bg-dark-card p-6 rounded-xl shadow-sm mt-6">
+        <div className="bg-white border-l-4 border-b-4 dark:border-dark-border dark:bg-dark-card p-6 rounded-xl shadow-sm mt-6">
         <h3 className="font-medium mb-4">Quick Stats</h3>
         <div className="space-y-4">
           <div>
