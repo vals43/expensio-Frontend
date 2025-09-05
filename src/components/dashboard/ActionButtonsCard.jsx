@@ -3,24 +3,28 @@ import { motion } from 'framer-motion';
 import { useTheme } from '../theme/ThemeProvider';
 import { PlusIcon, ArrowRightIcon, ClockIcon, HistoryIcon } from 'lucide-react';
 import Modal from '../ui/Modal';
+import ExpenseForm from '../expenses/ExpenseForm';
 import TransactionForm from '../transaction/TransactionForm';
 
 export function ActionButtonsCard() {
 
   const { theme } = useTheme();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState(null);
   
 
   const actions = [{
     title: "Add expense",
     icon: <PlusIcon size={20} />,
     color: "green",
-    delay: 0
+    delay: 0,
+    actionType: "expense"
   }, {
     title: "Add income",
     icon: <ArrowRightIcon size={20} />,
     color: "blue",
-    delay: 0.1
+    delay: 0.1,
+    actionType: "income"
   }, {
     title: "Request",
     icon: <ClockIcon size={20} />,
@@ -33,7 +37,18 @@ export function ActionButtonsCard() {
     delay: 0.3
   }];
 
+  const handleButtonClick = (type) => {
+    setModalType(type);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setModalType(null);
+  };
+
   return (
+    <>
     <motion.div
       whileHover={{ boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)' }}
       className={`rounded-xl p-4`}
@@ -46,14 +61,26 @@ export function ActionButtonsCard() {
             icon={action.icon}
             color={action.color}
             delay={action.delay}
+            onClick={() => handleButtonClick(action.actionType)}
           />
         ))}
       </div>
     </motion.div>
+
+    <Modal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+         title={modalType === 'expense' ? 'Add Expense' : modalType === 'income' ? 'Add Income' : ''}
+        maxWidth="md"
+      >
+        {modalType === 'expense' && <ExpenseForm onSuccess={handleCloseModal} />}
+        {modalType === 'income' && <TransactionForm onClose={handleCloseModal} />}
+      </Modal>
+    </>
   );
 }
 
-function ActionButton({ title, icon, color, delay }) {
+function ActionButton({ title, icon, color, delay, onClick }) {
   const { theme } = useTheme();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -78,6 +105,7 @@ function ActionButton({ title, icon, color, delay }) {
 
   return (
     <motion.button
+      onClick={onClick}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       initial={{ opacity: 0, y: 20 }}
