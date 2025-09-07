@@ -67,15 +67,13 @@ export function ActionButtonsCard() {
       </div>
     </motion.div>
 
-    <Modal
+        {modalType === 'expense' &&       <ExpenseForm
         isOpen={isModalOpen}
-        onClose={handleCloseModal}
-         title={modalType === 'expense' ? 'Add Expense' : modalType === 'income' ? 'Add Income' : ''}
-        maxWidth="md"
-      >
-        {modalType === 'expense' && <ExpenseForm onSuccess={handleCloseModal} />}
+        onClose={() => {
+          setIsModalOpen(false);
+        }}
+      />}
         {modalType === 'income' && <TransactionForm onClose={handleCloseModal} />}
-      </Modal>
     </>
   );
 }
