@@ -320,7 +320,7 @@ const TransactionList = ({ type }) => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md"
+              className=" bg-white/30 dark:bg-gray-800/30 backdrop-blur-lg rounded-lg p-6 w-full max-w-md border border-white/20 shadow-xl"
             >
               <TransactionForm initialData={editTransaction} onSubmit={handleCloseForm} />
             </motion.div>
@@ -332,4 +332,3 @@ const TransactionList = ({ type }) => {
 };
 
 export default TransactionList;
-

@@ -1,20 +1,13 @@
-import { useState, useEffect } from "react";
-import {
-  PlusIcon,
-  CalendarIcon,
-  TagIcon,
-  DollarSignIcon,
-  FileTextIcon,
-  XIcon,
-  UploadIcon,
-  RepeatIcon,
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useExpenseActions } from "../../api/expenses/expenseContext";
-import CategoryDropdown from "../category/categoryDropdown";
+"use client"
 
-const ExpenseForm = ({ initialData = null, onClose }) => {
-  const [isLoading, setIsLoading] = useState(false);
+import { useState, useEffect } from "react"
+import { PlusIcon, CalendarIcon, DollarSignIcon, FileTextIcon, XIcon, UploadIcon, RepeatIcon } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { useExpenseActions } from "../../api/expenses/expenseContext"
+import CategoryDropdown from "../category/categoryDropdown"
+
+const ExpenseForm = ({ initialData = null, onClose, isOpen }) => {
+  const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     amount: "",
     date: new Date().toISOString().slice(0, 16),
@@ -23,93 +16,89 @@ const ExpenseForm = ({ initialData = null, onClose }) => {
     type: "one-time",
     startDate: "",
     endDate: "",
-    receipt: null, // Store new file as DataURL or null
-    existingReceipt: null, // Store existing receipt reference (e.g., URL or ID)
-  });
-  const [errors, setErrors] = useState({});
-  const [isVisible, setIsVisible] = useState(true);
+    receipt: null,
+    existingReceipt: null,
+  })
+  const [errors, setErrors] = useState({})
 
-  const { handleCreateExpense, handleUpdateExpense } = useExpenseActions();
+  const { handleCreateExpense, handleUpdateExpense } = useExpenseActions()
 
   useEffect(() => {
+    if (!isOpen) return
     if (initialData) {
       setFormData({
         amount: initialData.amount || "",
-        date: initialData.date
-          ? new Date(initialData.date).toISOString().slice(0, 16)
-          : "",
-        // Handle categoryId correctly if initialData has a category object
+        date: initialData.date ? new Date(initialData.date).toISOString().slice(0, 16) : "",
         categoryId: initialData.category?.id || initialData.categoryId || "",
         description: initialData.description || "",
         type: initialData.type || "one-time",
-        startDate: initialData.startDate
-          ? new Date(initialData.startDate).toISOString().slice(0, 16)
-          : "",
-        endDate: initialData.endDate
-          ? new Date(initialData.endDate).toISOString().slice(0, 16)
-          : "",
-        receipt: null, // New receipt will be set only on file upload
-        existingReceipt: initialData.receipt || null, // Preserve existing receipt
-      });
+        startDate: initialData.startDate ? new Date(initialData.startDate).toISOString().slice(0, 16) : "",
+        endDate: initialData.endDate ? new Date(initialData.endDate).toISOString().slice(0, 16) : "",
+        receipt: null,
+        existingReceipt: initialData.receipt || null,
+      })
+    } else {
+      setFormData({
+        amount: "",
+        date: new Date().toISOString().slice(0, 16),
+        categoryId: "",
+        description: "",
+        type: "one-time",
+        startDate: "",
+        endDate: "",
+        receipt: null,
+        existingReceipt: null,
+      })
     }
-  }, [initialData]);
+  }, [initialData, isOpen])
 
   const validateForm = () => {
-    const newErrors = {};
-
+    const newErrors = {}
     if (!formData.amount || isNaN(Number(formData.amount)) || Number(formData.amount) <= 0) {
-      newErrors.amount = "Please enter a valid amount";
+      newErrors.amount = "Please enter a valid amount"
     }
-
     if (!formData.date) {
-      newErrors.date = "Please select a date";
+      newErrors.date = "Please select a date"
     }
-
     if (!formData.categoryId) {
-      newErrors.categoryId = "Please select a category";
+      newErrors.categoryId = "Please select a category"
     }
-
     if (formData.type === "recurring") {
       if (!formData.startDate) {
-        newErrors.startDate = "Start date is required for recurring expenses";
+        newErrors.startDate = "Start date is required for recurring expenses"
       }
       if (!formData.endDate) {
-        newErrors.endDate = "End date is required for recurring expenses";
+        newErrors.endDate = "End date is required for recurring expenses"
       }
-      if (
-        formData.startDate &&
-        formData.endDate &&
-        new Date(formData.startDate) >= new Date(formData.endDate)
-      ) {
-        newErrors.endDate = "End date must be after start date";
+      if (formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
+        newErrors.endDate = "End date must be after start date"
       }
     }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
-  };
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }))
+  }
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files[0]
     if (file) {
-      const reader = new FileReader();
+      const reader = new FileReader()
       reader.onload = (e) => {
-        setFormData((prev) => ({ ...prev, receipt: e.target.result }));
-      };
-      reader.readAsDataURL(file);
+        setFormData((prev) => ({ ...prev, receipt: e.target.result }))
+      }
+      reader.readAsDataURL(file)
     }
-  };
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-    setIsLoading(true);
+    e.preventDefault()
+    if (!validateForm()) return
+    setIsLoading(true)
 
     try {
       const expenseData = {
@@ -119,328 +108,300 @@ const ExpenseForm = ({ initialData = null, onClose }) => {
         description: formData.description || undefined,
         type: formData.type,
         startDate:
-          formData.type === "recurring" && formData.startDate
-            ? new Date(formData.startDate).toISOString()
-            : undefined,
+          formData.type === "recurring" && formData.startDate ? new Date(formData.startDate).toISOString() : undefined,
         endDate:
-          formData.type === "recurring" && formData.endDate
-            ? new Date(formData.endDate).toISOString()
-            : undefined,
-        // Only include receipt if a new file was uploaded
+          formData.type === "recurring" && formData.endDate ? new Date(formData.endDate).toISOString() : undefined,
         receipt: formData.receipt || undefined,
-      };
-
-      if (initialData) {
-        await handleUpdateExpense(initialData.id, expenseData);
-      } else {
-        await handleCreateExpense(expenseData);
       }
 
-      setIsVisible(false);
-      setTimeout(() => {
-        if (onClose) onClose();
-      }, 400);
+      if (initialData) {
+        await handleUpdateExpense(initialData.id, expenseData)
+      } else {
+        await handleCreateExpense(expenseData)
+      }
+
+      if (onClose) onClose()
     } catch (error) {
-      console.error("Error submitting expense:", error);
+      console.error("Error submitting expense:", error)
       setErrors((prev) => ({
         ...prev,
         form: "Failed to save expense. Please try again.",
-      }));
+      }))
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleCloseClick = () => {
-    setIsVisible(false);
-    setTimeout(() => {
-      if (onClose) onClose();
-    }, 400);
-  };
+    if (onClose) onClose()
+  }
+
+  if (!isOpen) return null
 
   return (
     <AnimatePresence>
-      {isVisible && (
+      {isOpen && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-          className="w-full max-w-md mx-auto p-1"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto"
         >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="relative overflow-hidden rounded-2xl bg-white/10 dark:bg-black/10 backdrop-blur-xl shadow-2xl"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="relative w-full max-w-4xl p-1 my-8"
           >
-            <button
-              onClick={handleCloseClick}
-              className="absolute top-3 right-3 text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors z-20"
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="relative max-h-[90vh] overflow-y-auto rounded-3xl bg-white/20 dark:bg-black/20 backdrop-blur-2xl shadow-2xl border border-white/30 dark:border-white/10"
             >
-              <XIcon className="w-6 h-6" />
-            </button>
+              <button
+                onClick={handleCloseClick}
+                className="absolute top-4 right-4 text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors z-20 bg-white/20 dark:bg-black/20 backdrop-blur-sm rounded-full p-2 hover:bg-white/30 dark:hover:bg-black/30"
+              >
+                <XIcon className="w-5 h-5" />
+              </button>
 
-            <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent dark:from-white/5 pointer-events-none" />
-            <div className="absolute inset-0 opacity-30">
-              <div className="absolute top-0 -left-4 w-72 h-72 bg-red-300 rounded-full mix-blend-multiply filter blur-xl animate-blob dark:bg-red-900/30" />
-              <div className="absolute top-0 -right-4 w-72 h-72 bg-orange-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000 dark:bg-orange-900/30" />
-              <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000 dark:bg-pink-900/30" />
-            </div>
-
-            <div className="relative z-10 p-8">
-              <div className="text-center mb-8">
-                <motion.h2
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2"
-                >
-                  {initialData ? "Update Expense" : "Add New Expense"}
-                </motion.h2>
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-sm text-gray-600 dark:text-gray-400"
-                >
-                  Track your spending
-                </motion.p>
-              </div>
-
-              <motion.form onSubmit={handleSubmit} className="space-y-6">
-                {/* Form Error */}
-                {errors.form && (
-                  <p className="text-sm text-red-500 font-medium">{errors.form}</p>
-                )}
-
-                {/* Amount */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                    Amount *
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors">
-                      <DollarSignIcon className="h-5 w-5" />
-                    </div>
-                    <input
-                      type="number"
-                      name="amount"
-                      placeholder="0.00"
-                      value={formData.amount}
-                      onChange={handleChange}
-                      min="0.01"
-                      step="0.01"
-                      required
-                      className={`block w-full pl-12 pr-4 py-4 rounded-xl text-lg font-medium bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30 ${
-                        errors.amount
-                          ? "border-red-400 focus:border-red-400 focus:ring-red-200"
-                          : ""
-                      }`}
-                    />
-                  </div>
-                  {errors.amount && (
-                    <p className="text-sm text-red-500 font-medium">{errors.amount}</p>
-                  )}
-                </div>
-
-                {/* Date */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                    Date *
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
-                      <CalendarIcon className="h-5 w-5" />
-                    </div>
-                    <input
-                      type="datetime-local"
-                      name="date"
-                      value={formData.date}
-                      onChange={handleChange}
-                      required
-                      className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30 ${
-                        errors.date
-                          ? "border-red-400 focus:border-red-400 focus:ring-red-200"
-                          : ""
-                      }`}
-                    />
-                  </div>
-                  {errors.date && (
-                    <p className="text-sm text-red-500 font-medium">{errors.date}</p>
-                  )}
-                </div>
-
-                {/* Category */}
-                <CategoryDropdown
-                  value={formData.categoryId}
-                  onChange={(e) => handleChange(e)}
-                  errors={errors}
-                />
-
-                {/* Type */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                    Type
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors">
-                      <RepeatIcon className="h-5 w-5" />
-                    </div>
-                    <select
-                      name="type"
-                      value={formData.type}
-                      onChange={handleChange}
-                      className="block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium appearance-none cursor-pointer bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30"
-                    >
-                      <option value="one-time">One-time</option>
-                      <option value="recurring">Recurring</option>
-                    </select>
-                  </div>
-                </div>
-
-                {formData.type === "recurring" && (
-                  <AnimatePresence>
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="space-y-6"
-                    >
-                      {/* Start Date */}
-                      <div className="space-y-2">
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                          Start Date *
-                        </label>
-                        <div className="relative group">
-                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
-                            <CalendarIcon className="h-5 w-5" />
-                          </div>
-                          <input
-                            type="datetime-local"
-                            name="startDate"
-                            value={formData.startDate}
-                            onChange={handleChange}
-                            className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30 ${
-                              errors.startDate
-                                ? "border-red-400 focus:border-red-400 focus:ring-red-200"
-                                : ""
-                            }`}
-                          />
-                        </div>
-                        {errors.startDate && (
-                          <p className="text-sm text-red-500 font-medium">
-                            {errors.startDate}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* End Date */}
-                      <div className="space-y-2">
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                          End Date *
-                        </label>
-                        <div className="relative group">
-                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
-                            <CalendarIcon className="h-5 w-5" />
-                          </div>
-                          <input
-                            type="datetime-local"
-                            name="endDate"
-                            value={formData.endDate}
-                            onChange={handleChange}
-                            className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30 ${
-                              errors.endDate
-                                ? "border-red-400 focus:border-red-400 focus:ring-red-200"
-                                : ""
-                            }`}
-                          />
-                        </div>
-                        {errors.endDate && (
-                          <p className="text-sm text-red-500 font-medium">{errors.endDate}</p>
-                        )}
-                      </div>
-                    </motion.div>
-                  </AnimatePresence>
-                )}
-
-                {/* Description */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                    Description <span className="text-gray-400 font-normal">(Optional)</span>
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
-                      <FileTextIcon className="h-5 w-5" />
-                    </div>
-                    <input
-                      type="text"
-                      name="description"
-                      placeholder="Add a description"
-                      value={formData.description}
-                      onChange={handleChange}
-                      className="block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30"
-                    />
-                  </div>
-                </div>
-
-                {/* Receipt */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                    Receipt <span className="text-gray-400 font-normal">(Optional)</span>
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
-                      <UploadIcon className="h-5 w-5" />
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*,.pdf"
-                      onChange={handleFileChange}
-                      className="block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
-                    />
-                  </div>
-                  {formData.receipt && (
-                    <p className="text-sm text-green-600 dark:text-green-400">
-                      New receipt uploaded successfully
-                    </p>
-                  )}
-                  {formData.existingReceipt && !formData.receipt && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Existing receipt will be retained
-                    </p>
-                  )}
-                </div>
-
-                {/* Submit Button */}
-                <div className="pt-4">
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full py-4 px-6 rounded-xl text-base font-semibold bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 ease-out disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none backdrop-blur-sm border border-white/20"
+              <div className="relative z-10 p-8">
+                <div className="text-center mb-8">
+                  <motion.h2
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2"
                   >
-                    <div className="flex items-center justify-center gap-2">
-                      {isLoading ? (
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <PlusIcon className="h-5 w-5" />
-                      )}
-                      {isLoading
-                        ? "Processing..."
-                        : initialData
-                        ? "Update Expense"
-                        : "Add Expense"}
-                    </div>
-                  </button>
+                    {initialData ? "Update Expense" : "Add New Expense"}
+                  </motion.h2>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="text-sm text-gray-600 dark:text-gray-400"
+                  >
+                    Track your spending with style
+                  </motion.p>
                 </div>
-              </motion.form>
-            </div>
+
+                <motion.form onSubmit={handleSubmit} className="space-y-8">
+                  {/* Form Error */}
+                  {errors.form && (
+                    <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 backdrop-blur-sm">
+                      <p className="text-sm text-red-600 dark:text-red-400 font-medium">{errors.form}</p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Amount */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">Amount *</label>
+                      <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                          <DollarSignIcon className="h-5 w-5" />
+                        </div>
+                        <input
+                          type="number"
+                          name="amount"
+                          placeholder="0.00"
+                          value={formData.amount}
+                          onChange={handleChange}
+                          min="0.01"
+                          step="0.01"
+                          required
+                          className={`block w-full pl-12 pr-4 py-4 rounded-xl text-lg font-medium bg-white/30 dark:bg-black/30 backdrop-blur-xl border border-white/40 dark:border-white/20 focus:border-blue-400/60 focus:ring-4 focus:ring-blue-400/20 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/40 dark:hover:bg-black/40 hover:border-white/60 dark:hover:border-white/30 ${
+                            errors.amount ? "border-red-400/60 focus:border-red-400/60 focus:ring-red-400/20" : ""
+                          }`}
+                        />
+                      </div>
+                      {errors.amount && <p className="text-sm text-red-500 font-medium">{errors.amount}</p>}
+                    </div>
+
+                    {/* Date */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">Date *</label>
+                      <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                          <CalendarIcon className="h-5 w-5" />
+                        </div>
+                        <input
+                          type="datetime-local"
+                          name="date"
+                          value={formData.date}
+                          onChange={handleChange}
+                          required
+                          className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/30 dark:bg-black/30 backdrop-blur-xl border border-white/40 dark:border-white/20 focus:border-blue-400/60 focus:ring-4 focus:ring-blue-400/20 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/40 dark:hover:bg-black/40 hover:border-white/60 dark:hover:border-white/30 ${
+                            errors.date ? "border-red-400/60 focus:border-red-400/60 focus:ring-red-400/20" : ""
+                          }`}
+                        />
+                      </div>
+                      {errors.date && <p className="text-sm text-red-500 font-medium">{errors.date}</p>}
+                    </div>
+
+                    {/* Category - Full width */}
+                    <div className="lg:col-span-2">
+                      <CategoryDropdown value={formData.categoryId} onChange={(e) => handleChange(e)} errors={errors} />
+                    </div>
+
+                    {/* Type */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">Type</label>
+                      <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                          <RepeatIcon className="h-5 w-5" />
+                        </div>
+                        <select
+                          name="type"
+                          value={formData.type}
+                          onChange={handleChange}
+                          className="block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium appearance-none cursor-pointer bg-white/30 dark:bg-black/30 backdrop-blur-xl border border-white/40 dark:border-white/20 focus:border-blue-400/60 focus:ring-4 focus:ring-blue-400/20 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/40 dark:hover:bg-black/40 hover:border-white/60 dark:hover:border-white/30"
+                        >
+                          <option value="one-time">One-time</option>
+                          <option value="recurring">Recurring</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                        Description <span className="text-gray-400 font-normal">(Optional)</span>
+                      </label>
+                      <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                          <FileTextIcon className="h-5 w-5" />
+                        </div>
+                        <input
+                          type="text"
+                          name="description"
+                          placeholder="Add a description"
+                          value={formData.description}
+                          onChange={handleChange}
+                          className="block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/30 dark:bg-black/30 backdrop-blur-xl border border-white/40 dark:border-white/20 focus:border-blue-400/60 focus:ring-4 focus:ring-blue-400/20 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/40 dark:hover:bg-black/40 hover:border-white/60 dark:hover:border-white/30"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {formData.type === "recurring" && (
+                    <AnimatePresence>
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6 rounded-2xl bg-white/10 dark:bg-black/10 backdrop-blur-xl border border-white/30 dark:border-white/10"
+                      >
+                        {/* Start Date */}
+                        <div className="space-y-3">
+                          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                            Start Date *
+                          </label>
+                          <div className="relative group">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                              <CalendarIcon className="h-5 w-5" />
+                            </div>
+                            <input
+                              type="datetime-local"
+                              name="startDate"
+                              value={formData.startDate}
+                              onChange={handleChange}
+                              className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/30 dark:bg-black/30 backdrop-blur-xl border border-white/40 dark:border-white/20 focus:border-blue-400/60 focus:ring-4 focus:ring-blue-400/20 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/40 dark:hover:bg-black/40 hover:border-white/60 dark:hover:border-white/30 ${
+                                errors.startDate
+                                  ? "border-red-400/60 focus:border-red-400/60 focus:ring-red-400/20"
+                                  : ""
+                              }`}
+                            />
+                          </div>
+                          {errors.startDate && <p className="text-sm text-red-500 font-medium">{errors.startDate}</p>}
+                        </div>
+
+                        {/* End Date */}
+                        <div className="space-y-3">
+                          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                            End Date *
+                          </label>
+                          <div className="relative group">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                              <CalendarIcon className="h-5 w-5" />
+                            </div>
+                            <input
+                              type="datetime-local"
+                              name="endDate"
+                              value={formData.endDate}
+                              onChange={handleChange}
+                              className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/30 dark:bg-black/30 backdrop-blur-xl border border-white/40 dark:border-white/20 focus:border-blue-400/60 focus:ring-4 focus:ring-blue-400/20 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/40 dark:hover:bg-black/40 hover:border-white/60 dark:hover:border-white/30 ${
+                                errors.endDate ? "border-red-400/60 focus:border-red-400/60 focus:ring-red-400/20" : ""
+                              }`}
+                            />
+                          </div>
+                          {errors.endDate && <p className="text-sm text-red-500 font-medium">{errors.endDate}</p>}
+                        </div>
+                      </motion.div>
+                    </AnimatePresence>
+                  )}
+
+                  {/* Receipt - Full width */}
+                  <div className="space-y-3">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                      Receipt <span className="text-gray-400 font-normal">(Optional)</span>
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                        <UploadIcon className="h-5 w-5" />
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={handleFileChange}
+                        className="block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/30 dark:bg-black/30 backdrop-blur-xl border border-white/40 dark:border-white/20 focus:border-blue-400/60 focus:ring-4 focus:ring-blue-400/20 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/40 dark:hover:bg-black/40 hover:border-white/60 dark:hover:border-white/30 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-500/20 file:text-blue-600 dark:file:text-blue-400 hover:file:bg-blue-500/30 file:backdrop-blur-sm"
+                      />
+                    </div>
+                    {formData.receipt && (
+                      <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 backdrop-blur-sm">
+                        <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                          New receipt uploaded successfully
+                        </p>
+                      </div>
+                    )}
+                    {formData.existingReceipt && !formData.receipt && (
+                      <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 backdrop-blur-sm">
+                        <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                          Existing receipt will be retained
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-6">
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full py-4 px-6 rounded-xl text-base font-semibold bg-gradient-to-r from-blue-500/80 to-purple-600/80 hover:from-blue-600/90 hover:to-purple-700/90 text-white shadow-2xl hover:shadow-blue-500/25 transform hover:scale-[1.02] transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none backdrop-blur-xl border border-white/30 relative overflow-hidden group"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="flex items-center justify-center gap-2 relative z-10">
+                        {isLoading ? (
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <PlusIcon className="h-5 w-5" />
+                        )}
+                        {isLoading ? "Processing..." : initialData ? "Update Expense" : "Add Expense"}
+                      </div>
+                    </button>
+                  </div>
+                </motion.form>
+              </div>
+            </motion.div>
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
-  );
-};
+  )
+}
 
-export default ExpenseForm;
+export default ExpenseForm

@@ -8,7 +8,6 @@ import { motion } from 'framer-motion';
 import ExpenseActivityCard from '../components/card/ExpenseActivityCard';
 import { useIncomes } from '../api/incomes/getJsonIncomes';
 import { Loader } from './../components/ui/Loader';
-import Modal from '../components/ui/Modal';
 
 const Income = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);

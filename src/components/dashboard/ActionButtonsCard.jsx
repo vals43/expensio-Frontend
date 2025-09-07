@@ -2,13 +2,11 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../theme/ThemeProvider';
 import { PlusIcon, ArrowRightIcon, ClockIcon, HistoryIcon } from 'lucide-react';
-import Modal from '../ui/Modal';
 import TransactionForm from '../transaction/TransactionForm';
 
 export function ActionButtonsCard() {
 
   const { theme } = useTheme();
-  const [isModalOpen, setIsModalOpen] = useState(false);
   
 
   const actions = [{

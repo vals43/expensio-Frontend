@@ -69,6 +69,6 @@ const Modal = ({
             </motion.div>
           </div>
         </div>}
-    </AnimatePresence>;
+    </AnimatePresence>
 };
 export default Modal;

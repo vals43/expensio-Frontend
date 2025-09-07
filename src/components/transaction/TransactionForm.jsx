@@ -1,6 +1,8 @@
+"use client"
+
 import { useState, useEffect } from "react"
 import Button from "../ui/Button"
-import { PlusIcon, CalendarIcon, TagIcon, DollarSignIcon, FileTextIcon, X as XIcon } from "lucide-react"
+import { PlusIcon, CalendarIcon, TagIcon, DollarSignIcon, FileTextIcon, XIcon } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useIncomeActions } from "../../api/incomes/getJsonIncomes"
 
@@ -68,7 +70,6 @@ const TransactionForm = ({ onSubmit, initialData = null, onClose }) => {
       setTimeout(() => {
         if (onClose) onClose()
       }, 400)
-
     } catch (error) {
       console.error("Error submitting form:", error)
     } finally {
@@ -101,14 +102,14 @@ const TransactionForm = ({ onSubmit, initialData = null, onClose }) => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="w-full max-w-md mx-auto p-1"
+          className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black/50 backdrop-blur-sm"
         >
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="relative overflow-hidden rounded-2xl bg-white/10 dark:bg-black/10 backdrop-blur-xl shadow-2xl"
+            className="relative overflow-y-scroll overflow-x-hidden w-fit max-h-[90vh] rounded-2xl bg-white/10 dark:bg-black/10 backdrop-blur-xl shadow-2xl scrollbar scrollbar-w-2 scrollbar-track-transparent scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 scrollbar-thumb-rounded-full"
           >
             {/* Bouton X */}
             <button
@@ -146,54 +147,76 @@ const TransactionForm = ({ onSubmit, initialData = null, onClose }) => {
               </div>
 
               <motion.form onSubmit={handleSubmit} className="space-y-6">
-                {/* Amount */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Amount</label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors">
-                      <DollarSignIcon className="h-5 w-5" />
+                {/* Grid container for responsive layout */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Amount */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Amount</label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors">
+                        <DollarSignIcon className="h-5 w-5" />
+                      </div>
+                      <input
+                        type="number"
+                        name="amount"
+                        placeholder="0.00"
+                        value={formData.amount}
+                        onChange={handleChange}
+                        min="0.01"
+                        step="0.01"
+                        required
+                        className={`block w-full pl-12 pr-4 py-4 rounded-xl text-lg font-medium bg-white/60 dark:bg-black/30 backdrop-blur-md border border-white/40 dark:border-white/20 focus:border-primary/60 focus:ring-4 focus:ring-primary/25 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/70 dark:hover:bg-black/40 hover:border-white/50 dark:hover:border-white/30 hover:shadow-lg hover:shadow-primary/10 ${errors.amount ? "border-red-400 focus:border-red-400 focus:ring-red-200" : ""}`}
+                      />
                     </div>
-                    <input
-                      type="number"
-                      name="amount"
-                      placeholder="0.00"
-                      value={formData.amount}
-                      onChange={handleChange}
-                      min="0.01"
-                      step="0.01"
-                      required
-                      className={`block w-full pl-12 pr-4 py-4 rounded-xl text-lg font-medium bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30 ${errors.amount ? "border-red-400 focus:border-red-400 focus:ring-red-200" : ""}`}
-                    />
+                    {errors.amount && <p className="text-sm text-red-500 font-medium">{errors.amount}</p>}
                   </div>
-                  {errors.amount && <p className="text-sm text-red-500 font-medium">{errors.amount}</p>}
+
+                  {/* Source */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Source</label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors">
+                        <TagIcon className="h-5 w-5" />
+                      </div>
+                      <select
+                        name="source"
+                        value={formData.source}
+                        onChange={handleChange}
+                        required
+                        className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium appearance-none cursor-pointer bg-white/60 dark:bg-black/30 backdrop-blur-md border border-white/40 dark:border-white/20 focus:border-primary/60 focus:ring-4 focus:ring-primary/25 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/70 dark:hover:bg-black/40 hover:border-white/50 dark:hover:border-white/30 hover:shadow-lg hover:shadow-primary/10 ${errors.source ? "border-red-400 focus:border-red-400 focus:ring-red-200" : ""}`}
+                      >
+                        <option value="">Select a source</option>
+                        {incomeCategories.map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {errors.source && <p className="text-sm text-red-500 font-medium">{errors.source}</p>}
+                  </div>
+
+                  {/* Date */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Date</label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
+                        <CalendarIcon className="h-5 w-5" />
+                      </div>
+                      <input
+                        type="date"
+                        name="date"
+                        value={formData.date}
+                        onChange={handleChange}
+                        required
+                        className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/60 dark:bg-black/30 backdrop-blur-md border border-white/40 dark:border-white/20 focus:border-primary/60 focus:ring-4 focus:ring-primary/25 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/70 dark:hover:bg-black/40 hover:border-white/50 dark:hover:border-white/30 hover:shadow-lg hover:shadow-primary/10 ${errors.date ? "border-red-400 focus:border-red-400 focus:ring-red-200" : ""}`}
+                      />
+                    </div>
+                    {errors.date && <p className="text-sm text-red-500 font-medium">{errors.date}</p>}
+                  </div>
                 </div>
 
-                {/* Source */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Source</label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors">
-                      <TagIcon className="h-5 w-5" />
-                    </div>
-                    <select
-                      name="source"
-                      value={formData.source}
-                      onChange={handleChange}
-                      required
-                      className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium appearance-none cursor-pointer bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30 ${errors.source ? "border-red-400 focus:border-red-400 focus:ring-red-200" : ""}`}
-                    >
-                      <option value="">Select a source</option>
-                      {incomeCategories.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  {errors.source && <p className="text-sm text-red-500 font-medium">{errors.source}</p>}
-                </div>
-
-                {/* Description */}
+                {/* Description - Full width */}
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
                     Description <span className="text-gray-400 font-normal">(Optional)</span>
@@ -208,28 +231,9 @@ const TransactionForm = ({ onSubmit, initialData = null, onClose }) => {
                       placeholder="Add a description"
                       value={formData.description}
                       onChange={handleChange}
-                      className="block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30"
+                      className="block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/60 dark:bg-black/30 backdrop-blur-md border border-white/40 dark:border-white/20 focus:border-primary/60 focus:ring-4 focus:ring-primary/25 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/70 dark:hover:bg-black/40 hover:border-white/50 dark:hover:border-white/30 hover:shadow-lg hover:shadow-primary/10"
                     />
                   </div>
-                </div>
-
-                {/* Date */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Date</label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
-                      <CalendarIcon className="h-5 w-5" />
-                    </div>
-                    <input
-                      type="date"
-                      name="date"
-                      value={formData.date}
-                      onChange={handleChange}
-                      required
-                      className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/50 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-white/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/20 text-gray-900 dark:text-white transition-all duration-200 ease-out hover:bg-white/60 dark:hover:bg-black/30 ${errors.date ? "border-red-400 focus:border-red-400 focus:ring-red-200" : ""}`}
-                    />
-                  </div>
-                  {errors.date && <p className="text-sm text-red-500 font-medium">{errors.date}</p>}
                 </div>
 
                 {/* Submit Button */}
@@ -237,9 +241,10 @@ const TransactionForm = ({ onSubmit, initialData = null, onClose }) => {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full py-4 px-6 rounded-xl text-base font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 ease-out disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none backdrop-blur-sm border border-white/20"
+                    className="w-full py-4 px-6 rounded-xl text-base font-semibold bg-gradient-to-r from-primary via-primary/90 to-primary/80 hover:from-primary/95 hover:via-primary/85 hover:to-primary/75 text-primary-foreground shadow-xl hover:shadow-2xl hover:shadow-primary/25 transform hover:scale-[1.02] transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none backdrop-blur-md border border-white/30 dark:border-white/20 relative overflow-hidden group"
                   >
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-transparent to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="flex items-center justify-center gap-2 relative z-10">
                       {isLoading ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       ) : (
@@ -259,3 +264,4 @@ const TransactionForm = ({ onSubmit, initialData = null, onClose }) => {
 }
 
 export default TransactionForm
+ 

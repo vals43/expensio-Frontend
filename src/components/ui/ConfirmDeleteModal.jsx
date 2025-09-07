@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import Modal from "./Modal";
 import Button from "./Button";
 
 export const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, itemName = "this item" }) => {
@@ -19,7 +18,7 @@ export const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, itemName = "thi
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Confirm Delete" maxWidth="sm">
+    <div>
       {successMessage ? (
         <p className="text-green-600 dark:text-green-500 text-center">{successMessage}</p>
       ) : (
@@ -31,6 +30,6 @@ export const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, itemName = "thi
           </div>
         </div>
       )}
-    </Modal>
+    </div>
   );
 };

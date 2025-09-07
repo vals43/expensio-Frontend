@@ -218,7 +218,7 @@ const ExpenseList = () => {
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <CardTitle>{formatAmount(t.amount)}</CardTitle>
+                        <CardTitle className={'text-red-600'}>-{formatAmount(t.amount)}</CardTitle>
                         <div className="flex items-center gap-2 mt-2">
                           <div className={`w-3 h-3 rounded-full ${getCategoryColor(t.category?.name || "Other")}`} />
                           <span>{t.category?.name || "Other"}</span>
@@ -288,7 +288,7 @@ const ExpenseList = () => {
               <TableBody>
                 {filteredTransactions.map((t) => (
                   <motion.tr key={t.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="hover:bg-muted/30">
-                    <TableCell>{formatAmount(t.amount)}</TableCell>
+                    <TableCell className="text-red-600">{formatAmount(t.amount)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div className={`w-3 h-3 rounded-full ${getCategoryColor(t.category?.name || "Other")}`} />
@@ -338,7 +338,7 @@ const ExpenseList = () => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-card border-2 border-border shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden dark:bg-dark-card"
+              className="bg-card border-2 border-border shadow-2xl max-w-2xl w-full overflow-hidden dark:bg-dark-card"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="bg-primary p-4 flex items-center justify-between">
@@ -374,24 +374,10 @@ const ExpenseList = () => {
       {/* Expense Form */}
       <AnimatePresence>
         {isFormOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md"
-            >
-              <ExpenseForm
-                initialData={selectedExpense}
-                onClose={handleCloseForm}
-              />
-            </motion.div>
-          </motion.div>
+          <ExpenseForm
+            initialData={selectedExpense}
+            onClose={handleCloseForm}
+          />
         )}
       </AnimatePresence>
     </div>

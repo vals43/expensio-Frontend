@@ -6,12 +6,14 @@ import { StatisticsCard } from '../components/dashboard/StatisticsCard';
 import StatsCard from '../components/card/StatsCard';
 import { LineChart } from '../components/charts/LineChart';
 import { TransactionCard } from '../components/card/TransactionCard';
-import { CreditCardIcon } from 'lucide-react';
+import { Calendar, CreditCardIcon, RefreshCcw } from 'lucide-react';
 import { ActionButtonsCard } from './../components/dashboard/ActionButtonsCard';
 import { useJsonUser } from '../api/user/useJsonUser.js';
 import { useJsonDailySummary, useJsonSummary } from '../api/summary/useJsonSummary.js';
 import { getJsonExpenses } from '../api/expenses/expenseContext.jsx';
 import { getJsonIncomes } from '../api/incomes/getJsonIncomes.jsx';
+import BudgetAlertsDashboard from '../components/dashboard/budget-alerts-dashboard.jsx';
+import Button from '../components/ui/Button.jsx';
 
 const upTrendData = [{
   name: 'Jan',
@@ -164,6 +166,28 @@ export function FinanceDashboard() {
   
   return (
     <div className="">
+            <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Tableau de Bord Financier</h1>
+          <p className="text-muted-foreground">Suivi de vos finances mensuelles</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">
+            {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+          </span>
+          <Button
+            onClick={() => {
+              // 🔄 juste pour simuler un refresh
+              setBudgetData({ ...budgetData })
+            }}
+            variant="outline"
+            size="sm"
+          >
+            <RefreshCcw className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4  md:p-6">
         <motion.div initial={{
           opacity: 0,
@@ -188,7 +212,9 @@ export function FinanceDashboard() {
             delay: 0.1
           }}>
             <UserProfileCard name={user.firstName} balance={`${balance || "0"} Ar`} />
+
           </motion.div>
+          
           <div className="grid grid-cols-1 gap-4">
             <motion.div initial={{
               opacity: 0,
@@ -205,6 +231,7 @@ export function FinanceDashboard() {
           </div>
         </div>
       </div>
+      <BudgetAlertsDashboard/>
       <motion.div initial={{
         opacity: 0,
         y: 20
