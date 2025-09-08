@@ -176,16 +176,6 @@ export function FinanceDashboard() {
           <span className="text-sm text-muted-foreground">
             {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
           </span>
-          <Button
-            onClick={() => {
-              // 🔄 juste pour simuler un refresh
-              setBudgetData({ ...budgetData })
-            }}
-            variant="outline"
-            size="sm"
-          >
-            <RefreshCcw className="h-4 w-4" />
-          </Button>
         </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4  md:p-6">
@@ -211,7 +201,7 @@ export function FinanceDashboard() {
             duration: 0.5,
             delay: 0.1
           }}>
-            <UserProfileCard name={user.firstName} balance={`${balance || "0"} Ar`} />
+            <UserProfileCard name={user.firstName} balance={`${balance || 0}`} />
 
           </motion.div>
           

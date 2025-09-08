@@ -1,34 +1,10 @@
-// src/services/receiptService.js
-import axios from "axios";
-import { getToken } from "../auth/authService";
-
-const BACKEND_URL = import.meta.env.VITE_APP_BACKEND_URL;
-
-// 🔹 Axios instance
-const api = axios.create({
-  baseURL: `${BACKEND_URL}/api`,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-// 🔹 Add auth token to every request
-api.interceptors.request.use(
-  (config) => {
-    const token = getToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+import apiClient from "../auth/apiClient";
 
 // 🔹 GET /receipts/{id}
 // Fetch the receipt as arraybuffer with auth
 export const fetchReceiptByExpenseId = async (expenseId) => {
   try {
-    const response = await api.get(`/receipts/${expenseId}`, {
+    const response = await apiClient.get(`/receipts/${expenseId}`, {
       responseType: "arraybuffer", // Fetch as binary data
     });
     const contentType = response.headers["content-type"];

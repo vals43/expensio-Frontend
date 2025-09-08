@@ -1,23 +1,17 @@
 // src/context/userService.js
-import axios from "axios";
-import { getToken } from "../auth/authService";
+import apiClient from "../auth/apiClient";
 
-const BACKEND_URL = import.meta.env.VITE_APP_BACKEND_URL;
+// You no longer need to import axios directly or getToken
+// import axios from "axios";
+// import { getToken } from "../auth/authService";
+
+// You no longer need the BACKEND_URL variable either
+// const BACKEND_URL = import.meta.env.VITE_APP_BACKEND_URL;
 
 export async function getUser() {
-  const token = getToken();
-
-  if (!token) {
-    throw new Error("No authentication token found.");
-  }
-
   try {
-    const response = await axios.get(`${BACKEND_URL}/api/user/profile`, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    // Use apiClient.get()
+    const response = await apiClient.get("/api/user/profile");
 
     return response.data;
   } catch (error) {
@@ -27,22 +21,11 @@ export async function getUser() {
 }
 
 export async function changePassword(oldPassword, newPassword) {
-  const token = getToken();
-
-  if (!token) {
-    throw new Error("No authentication token found.");
-  }
-
   try {
-    const response = await axios.post(
-      `${BACKEND_URL}/api/user/change-password`,
-      { oldPassword, newPassword },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      }
+    // Use apiClient.post()
+    const response = await apiClient.post(
+      "/api/user/change-password",
+      { oldPassword, newPassword }
     );
 
     return response.data;

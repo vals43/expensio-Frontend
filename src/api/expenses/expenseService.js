@@ -1,33 +1,9 @@
-import axios from "axios";
-import { getToken } from "../auth/authService";
-
-const BACKEND_URL = import.meta.env.VITE_APP_BACKEND_URL;
-
-// Configure a single Axios instance with a base URL and default headers
-const api = axios.create({
-  baseURL: `${BACKEND_URL}/api`,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-// Use an interceptor to add the authorization token to every request
-api.interceptors.request.use(
-  (config) => {
-    const token = getToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+// src/services/expenseService.js
+import apiClient from '../auth/apiClient';
 
 export async function fetchAllExpenses() {
   try {
-    const response = await api.get("/expenses");
+    const response = await apiClient.get("api/expenses");
     return response.data;
   } catch (error) {
     console.error(
@@ -40,7 +16,7 @@ export async function fetchAllExpenses() {
 
 export const fetchExpenseById = async (id) => {
   try {
-    const response = await api.get(`/expenses/${id}`);
+    const response = await apiClient.get(`api/expenses/${id}`);
     return response.data;
   } catch (error) {
     console.error("Erreur API - fetchExpenseById:", error);
@@ -50,7 +26,7 @@ export const fetchExpenseById = async (id) => {
 
 export const createNewExpense = async (expenseData) => {
   try {
-    const response = await api.post("/expenses", expenseData);
+    const response = await apiClient.post("api/expenses", expenseData);
     return response.data;
   } catch (error) {
     console.error("Erreur API - createNewExpense:", error);
@@ -60,7 +36,7 @@ export const createNewExpense = async (expenseData) => {
 
 export const updateExistingExpense = async (id, expenseData) => {
   try {
-    const response = await api.put(`/expenses/${id}`, expenseData);
+    const response = await apiClient.put(`api/expenses/${id}`, expenseData);
     return response.data;
   } catch (error) {
     console.error("Erreur API - updateExistingExpense:", error);
@@ -70,7 +46,7 @@ export const updateExistingExpense = async (id, expenseData) => {
 
 export const deleteExistingExpense = async (id) => {
   try {
-    await api.delete(`/expenses/${id}`);
+    await apiClient.delete(`api/expenses/${id}`);
     return true;
   } catch (error) {
     console.error("Erreur API - deleteExistingExpense:", error);
