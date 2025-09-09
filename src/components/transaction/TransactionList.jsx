@@ -12,8 +12,10 @@ import {
   SearchIcon,
 } from "lucide-react";
 import Button from "../ui/Button";
+// Importation du hook du contexte
 import { useIncomes, useIncomeActions } from "../../api/incomes/getJsonIncomes";
-import TransactionForm from "./TransactionForm";
+// Le formulaire n'est plus nécessaire ici
+// import TransactionForm from "./TransactionForm"; 
 
 // === UI Subcomponents ===
 const Card = ({ children, className }) => (
@@ -37,7 +39,8 @@ const TableRow = ({ children, className }) => (
   <tr className={`border-b transition-colors hover:bg-muted/50 ${className}`}>{children}</tr>
 );
 
-const TransactionList = ({ type }) => {
+// Ajout de la prop 'onEdit' pour la gestion de l'édition par le parent
+const TransactionList = ({ type, onEdit }) => {
   const { incomes } = useIncomes();
   const { handleDeleteIncome } = useIncomeActions();
   const transactions = incomes || [];
@@ -46,8 +49,9 @@ const TransactionList = ({ type }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
   const [sortOrder, setSortOrder] = useState("desc");
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editTransaction, setEditTransaction] = useState(null);
+  // Ces états ne sont plus nécessaires, la logique est dans le parent
+  // const [isFormOpen, setIsFormOpen] = useState(false);
+  // const [editTransaction, setEditTransaction] = useState(null);
   const [isDeleting, setIsDeleting] = useState(null);
 
   // Formatters
@@ -103,13 +107,11 @@ const TransactionList = ({ type }) => {
     }
   };
 
-  const handleOpenUpdateForm = (transaction) => {
-    setEditTransaction(transaction);
-    setIsFormOpen(true);
-  };
-  const handleCloseForm = () => {
-    setIsFormOpen(false);
-    setEditTransaction(null);
+  // La fonction pour l'édition appelle simplement la prop `onEdit` passée par le parent
+  const handleEdit = (transaction) => {
+    if (onEdit) {
+      onEdit(transaction);
+    }
   };
 
   return (
@@ -218,7 +220,8 @@ const TransactionList = ({ type }) => {
                       </div>
                       <CardAction>
                         <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="sm" onClick={() => handleOpenUpdateForm(t)}>
+                          {/* Appel de la fonction du parent pour l'édition */}
+                          <Button variant="ghost" size="sm" onClick={() => handleEdit(t)}>
                             <EditIcon className="h-4 w-4" />
                           </Button>
                           <Button
@@ -282,7 +285,8 @@ const TransactionList = ({ type }) => {
                     <TableCell>{t.description || "—"}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => handleOpenUpdateForm(t)}>
+                        {/* Appel de la fonction du parent pour l'édition */}
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(t)}>
                           <EditIcon className="h-4 w-4" />
                         </Button>
                         <Button
@@ -303,27 +307,6 @@ const TransactionList = ({ type }) => {
                 ))}
               </TableBody>
             </Table>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Transaction Form Modal */}
-      <AnimatePresence>
-        {isFormOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className=" bg-white/30 dark:bg-gray-800/30 backdrop-blur-lg rounded-lg p-6 w-full max-w-md border border-white/20 shadow-xl"
-            >
-              <TransactionForm initialData={editTransaction} onSubmit={handleCloseForm} />
-            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -8,6 +8,17 @@ export default function ProfileSecurity() {
     brand: "Inconnue",
     model: "Inconnu",
   });
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    // Set up the interval to update the time every second
+    const intervalId = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    // Clean up the interval when the component is unmounted
+    return () => clearInterval(intervalId);
+  }, []);
 
   useEffect(() => {
     if (navigator.userAgentData) {
@@ -45,13 +56,12 @@ export default function ProfileSecurity() {
     }
   }, []);
 
-  const now = new Date();
-  const formattedDate = now.toLocaleDateString('fr-FR', {
+  const formattedDate = currentTime.toLocaleDateString('fr-FR', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
-  const formattedTime = now.toLocaleTimeString('fr-FR', {
+  const formattedTime = currentTime.toLocaleTimeString('fr-FR', {
     hour: '2-digit',
     minute: '2-digit',
   });
@@ -68,8 +78,8 @@ export default function ProfileSecurity() {
             </button>
           </div>
           {showChangePassword && (
-            <div className="mt-4">
-              <ChangePasswordForm />
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+              <ChangePasswordForm onClose={() => setShowChangePassword(false)} />
             </div>
           )}
         </div>

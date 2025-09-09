@@ -6,11 +6,25 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useExpenseActions } from "../../api/expenses/expenseContext"
 import CategoryDropdown from "../category/categoryDropdown"
 
+// Helper function to format date to the required YYYY-MM-DDTHH:mm format
+const formatToDatetimeLocal = (dateString) => {
+  if (!dateString) return ""
+  const date = new Date(dateString)
+  // Check if date is valid
+  if (isNaN(date.getTime())) return ""
+  const year = date.getFullYear()
+  const month = (date.getMonth() + 1).toString().padStart(2, "0")
+  const day = date.getDate().toString().padStart(2, "0")
+  const hours = date.getHours().toString().padStart(2, "0")
+  const minutes = date.getMinutes().toString().padStart(2, "0")
+  return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
 const ExpenseForm = ({ initialData = null, onClose, isOpen }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     amount: "",
-    date: new Date().toISOString().slice(0, 16),
+    date: formatToDatetimeLocal(new Date()),
     categoryId: "",
     description: "",
     type: "one-time",
@@ -28,19 +42,19 @@ const ExpenseForm = ({ initialData = null, onClose, isOpen }) => {
     if (initialData) {
       setFormData({
         amount: initialData.amount || "",
-        date: initialData.date ? new Date(initialData.date).toISOString().slice(0, 16) : "",
+        date: formatToDatetimeLocal(initialData.date),
         categoryId: initialData.category?.id || initialData.categoryId || "",
         description: initialData.description || "",
         type: initialData.type || "one-time",
-        startDate: initialData.startDate ? new Date(initialData.startDate).toISOString().slice(0, 16) : "",
-        endDate: initialData.endDate ? new Date(initialData.endDate).toISOString().slice(0, 16) : "",
+        startDate: formatToDatetimeLocal(initialData.startDate),
+        endDate: formatToDatetimeLocal(initialData.endDate),
         receipt: null,
         existingReceipt: initialData.receipt || null,
       })
     } else {
       setFormData({
         amount: "",
-        date: new Date().toISOString().slice(0, 16),
+        date: formatToDatetimeLocal(new Date()),
         categoryId: "",
         description: "",
         type: "one-time",
@@ -54,26 +68,35 @@ const ExpenseForm = ({ initialData = null, onClose, isOpen }) => {
 
   const validateForm = () => {
     const newErrors = {}
+
+    // Amount is always required
     if (!formData.amount || isNaN(Number(formData.amount)) || Number(formData.amount) <= 0) {
       newErrors.amount = "Please enter a valid amount"
     }
-    if (!formData.date) {
-      newErrors.date = "Please select a date"
-    }
+
+    // Category is always required
     if (!formData.categoryId) {
       newErrors.categoryId = "Please select a category"
     }
-    if (formData.type === "recurring") {
+
+    // Type-specific validation
+    if (formData.type === "one-time") {
+      // Date is required for one-time expenses
+      if (!formData.date) {
+        newErrors.date = "Please select a date for one-time expenses"
+      }
+    } else if (formData.type === "recurring") {
+      // Start date is required for recurring expenses
       if (!formData.startDate) {
         newErrors.startDate = "Start date is required for recurring expenses"
       }
-      if (!formData.endDate) {
-        newErrors.endDate = "End date is required for recurring expenses"
-      }
+      // End date is optional for recurring expenses (ongoing if not provided)
+      // But if both dates are provided, validate the relationship
       if (formData.startDate && formData.endDate && new Date(formData.startDate) >= new Date(formData.endDate)) {
         newErrors.endDate = "End date must be after start date"
       }
     }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -103,15 +126,20 @@ const ExpenseForm = ({ initialData = null, onClose, isOpen }) => {
     try {
       const expenseData = {
         amount: Number(formData.amount),
-        date: new Date(formData.date).toISOString(),
         categoryId: formData.categoryId,
         description: formData.description || undefined,
         type: formData.type,
-        startDate:
-          formData.type === "recurring" && formData.startDate ? new Date(formData.startDate).toISOString() : undefined,
-        endDate:
-          formData.type === "recurring" && formData.endDate ? new Date(formData.endDate).toISOString() : undefined,
         receipt: formData.receipt || undefined,
+      }
+
+      // Add type-specific fields
+      if (formData.type === "one-time") {
+        expenseData.date = new Date(formData.date).toISOString()
+      } else if (formData.type === "recurring") {
+        expenseData.startDate = new Date(formData.startDate).toISOString()
+        if (formData.endDate) {
+          expenseData.endDate = new Date(formData.endDate).toISOString()
+        }
       }
 
       if (initialData) {
@@ -222,32 +250,6 @@ const ExpenseForm = ({ initialData = null, onClose, isOpen }) => {
                       {errors.amount && <p className="text-sm text-red-500 font-medium">{errors.amount}</p>}
                     </div>
 
-                    {/* Date */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">Date *</label>
-                      <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-blue-500 transition-colors">
-                          <CalendarIcon className="h-5 w-5" />
-                        </div>
-                        <input
-                          type="datetime-local"
-                          name="date"
-                          value={formData.date}
-                          onChange={handleChange}
-                          required
-                          className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/30 dark:bg-black/30 backdrop-blur-xl border border-white/40 dark:border-white/20 focus:border-blue-400/60 focus:ring-4 focus:ring-blue-400/20 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/40 dark:hover:bg-black/40 hover:border-white/60 dark:hover:border-white/30 ${
-                            errors.date ? "border-red-400/60 focus:border-red-400/60 focus:ring-red-400/20" : ""
-                          }`}
-                        />
-                      </div>
-                      {errors.date && <p className="text-sm text-red-500 font-medium">{errors.date}</p>}
-                    </div>
-
-                    {/* Category - Full width */}
-                    <div className="lg:col-span-2">
-                      <CategoryDropdown value={formData.categoryId} onChange={(e) => handleChange(e)} errors={errors} />
-                    </div>
-
                     {/* Type */}
                     <div className="space-y-3">
                       <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">Type</label>
@@ -267,8 +269,35 @@ const ExpenseForm = ({ initialData = null, onClose, isOpen }) => {
                       </div>
                     </div>
 
+                    {formData.type === "one-time" && (
+                      <div className="space-y-3 lg:col-span-2">
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">Date *</label>
+                        <div className="relative group">
+                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                            <CalendarIcon className="h-5 w-5" />
+                          </div>
+                          <input
+                            type="datetime-local"
+                            name="date"
+                            value={formData.date}
+                            onChange={handleChange}
+                            required
+                            className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/30 dark:bg-black/30 backdrop-blur-xl border border-white/40 dark:border-white/20 focus:border-blue-400/60 focus:ring-4 focus:ring-blue-400/20 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/40 dark:hover:bg-black/40 hover:border-white/60 dark:hover:border-white/30 ${
+                              errors.date ? "border-red-400/60 focus:border-red-400/60 focus:ring-red-400/20" : ""
+                            }`}
+                          />
+                        </div>
+                        {errors.date && <p className="text-sm text-red-500 font-medium">{errors.date}</p>}
+                      </div>
+                    )}
+
+                    {/* Category - Full width */}
+                    <div className="lg:col-span-2">
+                      <CategoryDropdown value={formData.categoryId} onChange={(e) => handleChange(e)} errors={errors} />
+                    </div>
+
                     {/* Description */}
-                    <div className="space-y-3">
+                    <div className="space-y-3 lg:col-span-2">
                       <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
                         Description <span className="text-gray-400 font-normal">(Optional)</span>
                       </label>
@@ -294,52 +323,65 @@ const ExpenseForm = ({ initialData = null, onClose, isOpen }) => {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6 rounded-2xl bg-white/10 dark:bg-black/10 backdrop-blur-xl border border-white/30 dark:border-white/10"
+                        className="space-y-4 p-6 rounded-2xl bg-white/10 dark:bg-black/10 backdrop-blur-xl border border-white/30 dark:border-white/10"
                       >
-                        {/* Start Date */}
-                        <div className="space-y-3">
-                          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
-                            Start Date *
-                          </label>
-                          <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-blue-500 transition-colors">
-                              <CalendarIcon className="h-5 w-5" />
-                            </div>
-                            <input
-                              type="datetime-local"
-                              name="startDate"
-                              value={formData.startDate}
-                              onChange={handleChange}
-                              className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/30 dark:bg-black/30 backdrop-blur-xl border border-white/40 dark:border-white/20 focus:border-blue-400/60 focus:ring-4 focus:ring-blue-400/20 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/40 dark:hover:bg-black/40 hover:border-white/60 dark:hover:border-white/30 ${
-                                errors.startDate
-                                  ? "border-red-400/60 focus:border-red-400/60 focus:ring-red-400/20"
-                                  : ""
-                              }`}
-                            />
-                          </div>
-                          {errors.startDate && <p className="text-sm text-red-500 font-medium">{errors.startDate}</p>}
+                        <div className="flex items-center gap-2 mb-4">
+                          <RepeatIcon className="h-5 w-5 text-blue-500" />
+                          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200">Recurring Schedule</h3>
                         </div>
 
-                        {/* End Date */}
-                        <div className="space-y-3">
-                          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
-                            End Date *
-                          </label>
-                          <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-blue-500 transition-colors">
-                              <CalendarIcon className="h-5 w-5" />
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          {/* Start Date */}
+                          <div className="space-y-3">
+                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                              Start Date *
+                            </label>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              When this expense should begin appearing in dashboards
+                            </p>
+                            <div className="relative group">
+                              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                                <CalendarIcon className="h-5 w-5" />
+                              </div>
+                              <input
+                                type="datetime-local"
+                                name="startDate"
+                                value={formData.startDate}
+                                onChange={handleChange}
+                                className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/30 dark:bg-black/30 backdrop-blur-xl border border-white/40 dark:border-white/20 focus:border-blue-400/60 focus:ring-4 focus:ring-blue-400/20 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/40 dark:hover:bg-black/40 hover:border-white/60 dark:hover:border-white/30 ${
+                                  errors.startDate
+                                    ? "border-red-400/60 focus:border-red-400/60 focus:ring-red-400/20"
+                                    : ""
+                                }`}
+                              />
                             </div>
-                            <input
-                              type="datetime-local"
-                              name="endDate"
-                              value={formData.endDate}
-                              onChange={handleChange}
-                              className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/30 dark:bg-black/30 backdrop-blur-xl border border-white/40 dark:border-white/20 focus:border-blue-400/60 focus:ring-4 focus:ring-blue-400/20 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/40 dark:hover:bg-black/40 hover:border-white/60 dark:hover:border-white/30 ${
-                                errors.endDate ? "border-red-400/60 focus:border-red-400/60 focus:ring-red-400/20" : ""
-                              }`}
-                            />
+                            {errors.startDate && <p className="text-sm text-red-500 font-medium">{errors.startDate}</p>}
                           </div>
-                          {errors.endDate && <p className="text-sm text-red-500 font-medium">{errors.endDate}</p>}
+
+                          {/* End Date */}
+                          <div className="space-y-3">
+                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200">
+                              End Date <span className="text-gray-400 font-normal">(Optional)</span>
+                            </label>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Leave empty for ongoing expenses</p>
+                            <div className="relative group">
+                              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                                <CalendarIcon className="h-5 w-5" />
+                              </div>
+                              <input
+                                type="datetime-local"
+                                name="endDate"
+                                value={formData.endDate}
+                                onChange={handleChange}
+                                className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/30 dark:bg-black/30 backdrop-blur-xl border border-white/40 dark:border-white/20 focus:border-blue-400/60 focus:ring-4 focus:ring-blue-400/20 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/40 dark:hover:bg-black/40 hover:border-white/60 dark:hover:border-white/30 ${
+                                  errors.endDate
+                                    ? "border-red-400/60 focus:border-red-400/60 focus:ring-red-400/20"
+                                    : ""
+                                }`}
+                              />
+                            </div>
+                            {errors.endDate && <p className="text-sm text-red-500 font-medium">{errors.endDate}</p>}
+                          </div>
                         </div>
                       </motion.div>
                     </AnimatePresence>
@@ -405,3 +447,4 @@ const ExpenseForm = ({ initialData = null, onClose, isOpen }) => {
 }
 
 export default ExpenseForm
+

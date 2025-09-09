@@ -5,7 +5,7 @@ export async function getSummary(month) {
   const mois = new Date().toISOString().split('-')[1];
 
   try {
-    const response = await apiClient.get(`/summary/monthly?month=${month || `${year}-${mois}`}`);
+    const response = await apiClient.get(`api/summary/monthly?month=${month || `${year}-${mois}`}`);
 
     return response.data;
   } catch (error) {
@@ -25,7 +25,7 @@ export async function getDailySummary(startDate, endDate) {
   const end = endDate || today;
 
   try {
-    const response = await apiClient.get(`/summary/daily?start=${start}&end=${end}`);
+    const response = await apiClient.get(`api/summary/daily?start=${start}&end=${end}`);
 
     return response.data;
   } catch (error) {
@@ -40,7 +40,7 @@ export async function getDailySummary(startDate, endDate) {
 // New function to get the sum of incomes grouped by source.
 export async function getIncomesBySource() {
   try {
-    const response = await apiClient.get(`/summary/incomeCategory`);
+    const response = await apiClient.get(`api/summary/incomeCategory`);
 
     return response.data;
   } catch (error) {
@@ -54,7 +54,7 @@ export async function getIncomesBySource() {
 
 export async function getExpensesBySource() {
   try {
-    const response = await apiClient.get(`/summary/expensesCategory`);
+    const response = await apiClient.get(`api/summary/expensesCategory`);
 
     return response.data;
   } catch (error) {

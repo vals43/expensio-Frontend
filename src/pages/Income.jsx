@@ -6,14 +6,17 @@ import Button from '../components/ui/Button';
 import { PlusIcon, ChartBarIcon, PieChartIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ExpenseActivityCard from '../components/card/ExpenseActivityCard';
-import { useIncomes } from '../api/incomes/getJsonIncomes';
+import { useIncomes, useIncomeActions } from '../api/incomes/getJsonIncomes';
 import { Loader } from './../components/ui/Loader';
 
 const Income = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeView, setActiveView] = useState('list');
+  // Nouvel état pour gérer les données de l'item à éditer
+  const [incomeToEdit, setIncomeToEdit] = useState(null); 
 
-  const { incomes } = useIncomes(); // Hook depuis le provider
+  const { incomes } = useIncomes();
+  const { handleCreateIncome, handleUpdateIncome } = useIncomeActions();
 
   if (!incomes) return <Loader message="Chargement des incomes ..." />;
 
@@ -48,6 +51,38 @@ const Income = () => {
 
   const data = formatDailyIncomes(dailyData);
 
+  // Fonction pour ouvrir le modal en mode création
+  const handleAddIncome = () => {
+    setIncomeToEdit(null); // S'assure qu'on est en mode création
+    setIsModalOpen(true);
+  };
+
+  // Fonction pour ouvrir le modal en mode édition
+  const handleEditIncome = (income) => {
+    setIncomeToEdit(income); // Passe les données de l'income à éditer
+    setIsModalOpen(true);
+  };
+
+  // Gère la soumission du formulaire, qu'il s'agisse d'une création ou d'une mise à jour
+  const handleFormSubmit = async (formData) => {
+    if (incomeToEdit) {
+      // Si incomeToEdit existe, c'est une mise à jour
+      await handleUpdateIncome(incomeToEdit.id, formData);
+
+      
+    } else {
+      // Sinon, c'est une création
+      await handleCreateIncome(formData);
+    }
+    // Le modal se fermera automatiquement via la prop onClose du TransactionForm
+  };
+
+  // Gère la fermeture du modal et réinitialise l'état
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setIncomeToEdit(null);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -70,14 +105,15 @@ const Income = () => {
               <PieChartIcon className="h-5 w-5" />
             </button>
           </div>
-          <Button onClick={() => setIsModalOpen(true)} icon={<PlusIcon className="h-5 w-5" />}>
+          <Button onClick={handleAddIncome} icon={<PlusIcon className="h-5 w-5" />}>
             Add Income
           </Button>
         </div>
       </div>
 
       {activeView === 'list' ? (
-        <TransactionList type="income" />
+        // Passe la fonction handleEditIncome à TransactionList
+        <TransactionList type="income" onEdit={handleEditIncome} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Income Breakdown */}
@@ -120,13 +156,13 @@ const Income = () => {
         </div>
       )}
 
-      {/* Modal pour le formulaire */}
       {isModalOpen && (
-          <TransactionForm
-            type="income"
-            onSubmit={() => setIsModalOpen(false)}
-            onClose={() => setIsModalOpen(false)}
-          />
+        <TransactionForm
+          // Passe les données de l'income à éditer si elles existent
+          initialData={incomeToEdit}
+          onSubmit={handleFormSubmit}
+          onClose={handleCloseModal}
+        />
       )}
     </div>
   );

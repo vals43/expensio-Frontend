@@ -4,7 +4,6 @@ import { MailIcon, LockIcon, UserIcon } from 'lucide-react';
 import { AuthLayout } from '../components/layout/AuthLayout';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
-import { SocialLogin } from '../components/SocialLogin';
 import { useTheme } from '../components/theme/ThemeProvider';
 import axios from 'axios';
 import { login } from '../api/auth/authService';
@@ -158,7 +157,6 @@ export function Signup() {
         <Button type="submit" fullWidth isLoading={isLoading} className="mt-6">
           Create account
         </Button>
-        <SocialLogin />
         <p className={`text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
           Already have an account?{' '}
           <Link

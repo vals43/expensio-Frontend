@@ -1,5 +1,3 @@
-
-
 import React, { useState } from "react";
 import { useTransactions } from "../context/TransactionContext";
 import Card from "../components/ui/Card";
@@ -40,7 +38,6 @@ const Expenses = () => {
     (total, data) => total + Number(data.totalAmount),
     0
   );
-  
 
   const formatDailyExpenses = (dailyData) => {
     if (!dailyData || !Array.isArray(dailyData)) {
@@ -54,6 +51,16 @@ const Expenses = () => {
   };
 
   const data = formatDailyExpenses(daily);
+
+  const handleOpenUpdateForm = (expense) => {
+    setEditingExpense(expense);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseForm = () => {
+    setIsModalOpen(false);
+    setEditingExpense(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -102,7 +109,7 @@ const Expenses = () => {
       </div>
 
       {activeView === "list" ? (
-        <ExpenseList transactions={exp} type="expense" />
+        <ExpenseList onEditExpense={handleOpenUpdateForm} transactions={exp} type="expense" />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="md:col-span-1 p-6 bg-white dark:bg-dark-card">
@@ -155,13 +162,9 @@ const Expenses = () => {
         </div>
       )}
 
-      {/* Expense Form Modal */}
       <ExpenseForm
         isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingExpense(null);
-        }}
+        onClose={handleCloseForm}
         initialData={editingExpense}
       />
     </div>

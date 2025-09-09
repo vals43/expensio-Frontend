@@ -4,264 +4,274 @@ import { useState, useEffect } from "react"
 import Button from "../ui/Button"
 import { PlusIcon, CalendarIcon, TagIcon, DollarSignIcon, FileTextIcon, XIcon } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { useIncomeActions } from "../../api/incomes/getJsonIncomes"
 
 const TransactionForm = ({ onSubmit, initialData = null, onClose }) => {
-  const { handleCreateIncome, handleUpdateIncome } = useIncomeActions()
-  const [isLoading, setIsLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    amount: "",
-    source: "",
-    description: "",
-    date: new Date().toISOString().split("T")[0],
-  })
-  const [errors, setErrors] = useState({})
-  const [isVisible, setIsVisible] = useState(true) // pour l'animation de fermeture
+    const [isLoading, setIsLoading] = useState(false)
+    const [formData, setFormData] = useState({
+        amount: "",
+        source: "",
+        description: "",
+        date: new Date().toISOString().split("T")[0],
+    })
+    const [errors, setErrors] = useState({})
+    const [submissionError, setSubmissionError] = useState("")
 
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        amount: initialData.amount,
-        source: initialData.source,
-        description: initialData.description,
-        date: initialData.date.split("T")[0],
-      })
+    useEffect(() => {
+        if (initialData) {
+            setFormData({
+                amount: String(initialData.amount),
+                source: initialData.source || "",
+                description: initialData.description || "",
+                date: initialData.date?.split("T")[0] || new Date().toISOString().split("T")[0],
+            })
+            setErrors({})
+            setSubmissionError("")
+        } else {
+            // Réinitialise le formulaire pour la création
+            setFormData({
+                amount: "",
+                source: "",
+                description: "",
+                date: new Date().toISOString().split("T")[0],
+            })
+        }
+    }, [initialData])
+
+    const validateForm = () => {
+        const newErrors = {}
+        if (!formData.amount || isNaN(Number(formData.amount)) || Number(formData.amount) <= 0) {
+            newErrors.amount = "Please enter a valid amount"
+        }
+        if (!formData.source) {
+            newErrors.source = "Please select a source"
+        }
+        if (!formData.date) {
+            newErrors.date = "Please select a date"
+        }
+        setErrors(newErrors)
+        return Object.keys(newErrors).length === 0
     }
-  }, [initialData])
 
-  const validateForm = () => {
-    const newErrors = {}
-    if (!formData.amount || isNaN(Number(formData.amount)) || Number(formData.amount) <= 0) {
-      newErrors.amount = "Please enter a valid amount"
+    const handleChange = (e) => {
+        const { name, value } = e.target
+        setFormData((prev) => ({ ...prev, [name]: value }))
+        if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }))
+        setSubmissionError("")
     }
-    if (!formData.source) {
-      newErrors.source = "Please select a source"
+
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        if (!validateForm()) return
+        setIsLoading(true)
+        setSubmissionError("")
+
+        try {
+            const transactionData = { ...formData, amount: Number(formData.amount) }
+
+            // Appel de la fonction onSubmit du parent
+            if (onSubmit) {
+                await onSubmit(transactionData);
+            }
+
+            // Ferme le modal après la soumission réussie
+            if (onClose) {
+                onClose();
+            }
+        } catch (error) {
+            console.error("Error submitting form:", error)
+            setSubmissionError("Failed to submit the form. Please try again.")
+        } finally {
+            setIsLoading(false)
+        }
     }
-    if (!formData.date) {
-      newErrors.date = "Please select a date"
-    }
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
 
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }))
-  }
+    const incomeCategories = ["Salary", "Freelance", "Investments", "Gift", "Other"]
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!validateForm()) return
-    setIsLoading(true)
+    return (
+        <AnimatePresence>
+            <motion.div
+                key="backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                onClick={(e) => e.target === e.currentTarget && onClose?.()}
+            />
 
-    try {
-      const transactionData = { ...formData, amount: Number(formData.amount) }
-      if (initialData) {
-        await handleUpdateIncome(initialData.id, transactionData)
-      } else {
-        await handleCreateIncome(transactionData)
-      }
-
-      if (onSubmit) await onSubmit(transactionData)
-
-      // Fermer le formulaire après soumission
-      setIsVisible(false)
-      setTimeout(() => {
-        if (onClose) onClose()
-      }, 400)
-    } catch (error) {
-      console.error("Error submitting form:", error)
-    } finally {
-      setIsLoading(false)
-      if (!initialData) {
-        setFormData({
-          amount: "",
-          source: "",
-          description: "",
-          date: new Date().toISOString().split("T")[0],
-        })
-      }
-    }
-  }
-
-  const incomeCategories = ["Salary", "Freelance", "Investments", "Gift", "Other"]
-
-  const handleCloseClick = () => {
-    setIsVisible(false)
-    setTimeout(() => {
-      if (onClose) onClose()
-    }, 400)
-  }
-
-  return (
-    <AnimatePresence>
-      {isVisible && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-          className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black/50 backdrop-blur-sm"
-        >
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="relative overflow-y-scroll overflow-x-hidden w-fit max-h-[90vh] rounded-2xl bg-white/10 dark:bg-black/10 backdrop-blur-xl shadow-2xl scrollbar scrollbar-w-2 scrollbar-track-transparent scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 scrollbar-thumb-rounded-full"
-          >
-            {/* Bouton X */}
-            <button
-              onClick={handleCloseClick}
-              className="absolute top-3 right-3 text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors z-20"
+            <motion.div
+                key="modal"
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -20 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="fixed inset-0 flex items-center justify-center z-50 p-3 sm:p-4 md:p-6"
             >
-              <XIcon className="w-6 h-6" />
-            </button>
+                <div className="relative w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl xl:max-w-3xl bg-white dark:bg-gray-900 shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden max-h-[95vh] sm:max-h-[90vh] border border-gray-200 dark:border-gray-700">
+                    <button
+                        onClick={onClose}
+                        className="absolute top-4 right-4 z-20 p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <XIcon className="w-5 h-5" />
+                    </button>
 
-            <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent dark:from-white/5 pointer-events-none" />
-            <div className="absolute inset-0 opacity-30">
-              <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-blob dark:bg-purple-900/30" />
-              <div className="absolute top-0 -right-4 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000 dark:bg-yellow-900/30" />
-              <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000 dark:bg-pink-900/30" />
-            </div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 opacity-80" />
 
-            <div className="relative z-10 p-8">
-              <div className="text-center mb-8">
-                <motion.h2
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2"
-                >
-                  {initialData ? "Update Income" : "Add New Income"}
-                </motion.h2>
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-sm text-gray-600 dark:text-gray-400"
-                >
-                  Track your financial progress
-                </motion.p>
-              </div>
-
-              <motion.form onSubmit={handleSubmit} className="space-y-6">
-                {/* Grid container for responsive layout */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Amount */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Amount</label>
-                    <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors">
-                        <DollarSignIcon className="h-5 w-5" />
-                      </div>
-                      <input
-                        type="number"
-                        name="amount"
-                        placeholder="0.00"
-                        value={formData.amount}
-                        onChange={handleChange}
-                        min="0.01"
-                        step="0.01"
-                        required
-                        className={`block w-full pl-12 pr-4 py-4 rounded-xl text-lg font-medium bg-white/60 dark:bg-black/30 backdrop-blur-md border border-white/40 dark:border-white/20 focus:border-primary/60 focus:ring-4 focus:ring-primary/25 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/70 dark:hover:bg-black/40 hover:border-white/50 dark:hover:border-white/30 hover:shadow-lg hover:shadow-primary/10 ${errors.amount ? "border-red-400 focus:border-red-400 focus:ring-red-200" : ""}`}
-                      />
+                    <div className="absolute inset-0 overflow-hidden opacity-20 dark:opacity-10">
+                        <div className="absolute -top-10 -left-10 w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full blur-2xl animate-pulse" />
+                        <div
+                            className="absolute -bottom-10 -right-10 w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full blur-2xl animate-pulse"
+                            style={{ animationDelay: "1s" }}
+                        />
                     </div>
-                    {errors.amount && <p className="text-sm text-red-500 font-medium">{errors.amount}</p>}
-                  </div>
 
-                  {/* Source */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Source</label>
-                    <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400 group-focus-within:text-primary transition-colors">
-                        <TagIcon className="h-5 w-5" />
-                      </div>
-                      <select
-                        name="source"
-                        value={formData.source}
-                        onChange={handleChange}
-                        required
-                        className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium appearance-none cursor-pointer bg-white/60 dark:bg-black/30 backdrop-blur-md border border-white/40 dark:border-white/20 focus:border-primary/60 focus:ring-4 focus:ring-primary/25 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/70 dark:hover:bg-black/40 hover:border-white/50 dark:hover:border-white/30 hover:shadow-lg hover:shadow-primary/10 ${errors.source ? "border-red-400 focus:border-red-400 focus:ring-red-200" : ""}`}
-                      >
-                        <option value="">Select a source</option>
-                        {incomeCategories.map((category) => (
-                          <option key={category} value={category}>
-                            {category}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    {errors.source && <p className="text-sm text-red-500 font-medium">{errors.source}</p>}
-                  </div>
+                    <div className="relative z-10 p-4 sm:p-6 md:p-8 overflow-y-auto max-h-[95vh] sm:max-h-[90vh]">
+                        <div className="text-center mb-6 sm:mb-8">
+                            <motion.h2
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                                className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2"
+                            >
+                                {initialData ? "Update Income" : "Add New Income"}
+                            </motion.h2>
+                            <motion.p
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.2 }}
+                                className="text-sm sm:text-base text-gray-600 dark:text-gray-400"
+                            >
+                                Track your financial progress
+                            </motion.p>
+                        </div>
 
-                  {/* Date */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Date</label>
-                    <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
-                        <CalendarIcon className="h-5 w-5" />
-                      </div>
-                      <input
-                        type="date"
-                        name="date"
-                        value={formData.date}
-                        onChange={handleChange}
-                        required
-                        className={`block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/60 dark:bg-black/30 backdrop-blur-md border border-white/40 dark:border-white/20 focus:border-primary/60 focus:ring-4 focus:ring-primary/25 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/70 dark:hover:bg-black/40 hover:border-white/50 dark:hover:border-white/30 hover:shadow-lg hover:shadow-primary/10 ${errors.date ? "border-red-400 focus:border-red-400 focus:ring-red-200" : ""}`}
-                      />
+                        <motion.form
+                            onSubmit={handleSubmit}
+                            className="space-y-4 sm:space-y-6"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 }}
+                        >
+                            {submissionError && (
+                                <div className="p-3 sm:p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                                    <p className="text-sm text-red-600 dark:text-red-400 font-medium text-center">{submissionError}</p>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                                {/* Amount Field */}
+                                <div className="sm:col-span-2 md:col-span-1">
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                                        Amount *
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
+                                            <DollarSignIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                                        </div>
+                                        <input
+                                            type="number"
+                                            name="amount"
+                                            placeholder="0.00"
+                                            value={formData.amount}
+                                            onChange={handleChange}
+                                            min="0.01"
+                                            step="0.01"
+                                            required
+                                            className={`block w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-base sm:text-lg font-medium bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/20 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-white transition-all duration-200 ${errors.amount ? "border-red-400 focus:border-red-400 focus:ring-red-500/20" : ""}`}
+                                        />
+                                    </div>
+                                    {errors.amount && <p className="text-sm text-red-500 font-medium mt-1">{errors.amount}</p>}
+                                </div>
+
+                                {/* Source Field */}
+                                <div className="sm:col-span-2 md:col-span-1">
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                                        Source *
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
+                                            <TagIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                                        </div>
+                                        <select
+                                            name="source"
+                                            value={formData.source}
+                                            onChange={handleChange}
+                                            required
+                                            className={`block w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-base font-medium appearance-none cursor-pointer bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/20 text-gray-900 dark:text-white transition-all duration-200 ${errors.source ? "border-red-400 focus:border-red-400 focus:ring-red-500/20" : ""}`}
+                                        >
+                                            <option value="">Select a source</option>
+                                            {incomeCategories.map((category) => (
+                                                <option key={category} value={category} className="bg-white dark:bg-gray-800">
+                                                    {category}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    {errors.source && <p className="text-sm text-red-500 font-medium mt-1">{errors.source}</p>}
+                                </div>
+
+                                {/* Date Field */}
+                                <div className="sm:col-span-2 md:col-span-1">
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Date *</label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
+                                            <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                                        </div>
+                                        <input
+                                            type="date"
+                                            name="date"
+                                            value={formData.date}
+                                            onChange={handleChange}
+                                            required
+                                            className={`block w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-base font-medium bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/20 text-gray-900 dark:text-white transition-all duration-200 ${errors.date ? "border-red-400 focus:border-red-400 focus:ring-red-500/20" : ""}`}
+                                        />
+                                    </div>
+                                    {errors.date && <p className="text-sm text-red-500 font-medium mt-1">{errors.date}</p>}
+                                </div>
+                            </div>
+
+                            {/* Description Field */}
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                                    Description <span className="text-gray-400 font-normal">(Optional)</span>
+                                </label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
+                                        <FileTextIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        name="description"
+                                        placeholder="Add a description"
+                                        value={formData.description}
+                                        onChange={handleChange}
+                                        className="block w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-4 rounded-lg sm:rounded-xl text-base font-medium bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/20 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-white transition-all duration-200"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="pt-4 sm:pt-6">
+                                <Button
+                                    type="submit"
+                                    disabled={isLoading}
+                                    className="w-full py-3 sm:py-4 px-6 rounded-lg sm:rounded-xl text-base sm:text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none focus:outline-none focus:ring-4 focus:ring-blue-500/20"
+                                >
+                                    <div className="flex items-center justify-center gap-2">
+                                        {isLoading ? (
+                                            <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        ) : (
+                                            <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                                        )}
+                                        {isLoading ? "Processing..." : initialData ? "Update Income" : "Add Income"}
+                                    </div>
+                                </Button>
+                            </div>
+                        </motion.form>
                     </div>
-                    {errors.date && <p className="text-sm text-red-500 font-medium">{errors.date}</p>}
-                  </div>
                 </div>
-
-                {/* Description - Full width */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-                    Description <span className="text-gray-400 font-normal">(Optional)</span>
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 dark:text-gray-400">
-                      <FileTextIcon className="h-5 w-5" />
-                    </div>
-                    <input
-                      type="text"
-                      name="description"
-                      placeholder="Add a description"
-                      value={formData.description}
-                      onChange={handleChange}
-                      className="block w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium bg-white/60 dark:bg-black/30 backdrop-blur-md border border-white/40 dark:border-white/20 focus:border-primary/60 focus:ring-4 focus:ring-primary/25 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-white transition-all duration-300 ease-out hover:bg-white/70 dark:hover:bg-black/40 hover:border-white/50 dark:hover:border-white/30 hover:shadow-lg hover:shadow-primary/10"
-                    />
-                  </div>
-                </div>
-
-                {/* Submit Button */}
-                <div className="pt-4">
-                  <Button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full py-4 px-6 rounded-xl text-base font-semibold bg-gradient-to-r from-primary via-primary/90 to-primary/80 hover:from-primary/95 hover:via-primary/85 hover:to-primary/75 text-primary-foreground shadow-xl hover:shadow-2xl hover:shadow-primary/25 transform hover:scale-[1.02] transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none backdrop-blur-md border border-white/30 dark:border-white/20 relative overflow-hidden group"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-transparent to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <div className="flex items-center justify-center gap-2 relative z-10">
-                      {isLoading ? (
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <PlusIcon className="h-5 w-5" />
-                      )}
-                      {isLoading ? "Processing..." : initialData ? "Update Income" : "Add Income"}
-                    </div>
-                  </Button>
-                </div>
-              </motion.form>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  )
+            </motion.div>
+        </AnimatePresence>
+    )
 }
 
 export default TransactionForm
- 

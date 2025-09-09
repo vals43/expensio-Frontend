@@ -4,7 +4,6 @@ import { MailIcon, LockIcon } from 'lucide-react';
 import { AuthLayout } from '../components/layout/AuthLayout';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
-import { SocialLogin } from '../components/SocialLogin';
 import { useTheme } from '../components/theme/ThemeProvider';
 import axios from 'axios'; // ⬅️ Import de la librairie axios pour les requêtes HTTP
 
@@ -132,7 +131,6 @@ export function Login() {
         <Button type="submit" fullWidth isLoading={isLoading} className="mt-6">
           Sign in
         </Button>
-        <SocialLogin />
         <p className={`text-center text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
           Don't have an account?{' '}
           <Link to="/signup" className={`font-medium ${theme === 'dark' ? 'text-primary-400 hover:text-primary-300' : 'text-primary-600 hover:text-primary-700'} transition-colors duration-200`}>

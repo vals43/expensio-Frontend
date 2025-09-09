@@ -36,6 +36,10 @@ apiClient.interceptors.response.use(
             if (window.location.pathname !== '/login') {
                 window.location.href = '/login';
             }
+
+            // Retourner une promesse qui ne se résout jamais pour stopper la propagation de l'erreur
+            // Cela empêche le bloc .catch() des composants d'être appelé.
+            return new Promise(() => {});
         }
         return Promise.reject(error);
     }
