@@ -1,11 +1,12 @@
 import React, { useState } from "react"
-import { useCategories } from "../../api/category/categoryContext"
-import Button from "../ui/Button"
-import Input from "../ui/Input"
-import Card from "../ui/Card"
+import { useCategories } from "../api/category/categoryContext"
+import Button from "../components/ui/Button"
+import Input from "../components/ui/Input"
+import Card from "../components/ui/Card"
 import { Plus, Edit2, Trash2, Save, X } from "lucide-react"
-import { ConfirmDeleteModal } from "../ui/ConfirmDeleteModal"
-import { useJsonExpensesBySource } from "../../api/summary/useJsonSummary"
+import { ConfirmDeleteModal } from "../components/ui/ConfirmDeleteModal"
+import { useJsonExpensesBySource } from "../api/summary/useJsonSummary"
+import { motion, AnimatePresence } from "framer-motion"
 
 export function CategoryManager() {
   const { categories, handleCreateCategory, handleUpdateCategory, handleDeleteCategory } = useCategories()
@@ -20,9 +21,6 @@ export function CategoryManager() {
 
   const cat = useJsonExpensesBySource().data
   if (!cat) return "loading"
-
-  console.log(cat);
-
 
   function getRandomHexColor(theme = "dark") {
     let color = "#"
@@ -100,41 +98,6 @@ export function CategoryManager() {
           <p className="text-gray-600 dark:text-gray-400">Organize and manage your categories with ease</p>
         </div>
 
-        {/* Create/Edit Form */}
-        {(isCreating || editingId) && (
-          <Card className="border-2 border-dashed border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20 p-4">
-            <h2 className="flex items-center gap-2 text-blue-700 dark:text-blue-300 font-semibold mb-4">
-              <Plus className="w-5 h-5" />
-              {editingId ? "Edit Category" : "Create New Category"}
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Category Name
-                </label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                  placeholder="Enter category name"
-                  className="dark:bg-gray-800 dark:border-gray-700"
-                  required
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <Button type="submit" className="flex items-center gap-2">
-                  <Save className="w-4 h-4" />
-                  {editingId ? "Update" : "Create"}
-                </Button>
-                <Button type="button" variant="outline" onClick={cancelEdit}>
-                  <X className="w-4 h-4" />
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </Card>
-        )}
-
         {/* Add Category Button */}
         {!isCreating && !editingId && (
           <div className="text-center">
@@ -189,7 +152,6 @@ export function CategoryManager() {
                     : category.description || "No amount yet"}
                 </p>
 
-
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button
                     size="sm"
@@ -211,10 +173,9 @@ export function CategoryManager() {
                   </Button>
                 </div>
               </Card>
-            );
+            )
           })}
         </div>
-
 
         {/* Empty state */}
         {categories.length === 0 && (
@@ -228,6 +189,55 @@ export function CategoryManager() {
           </div>
         )}
       </div>
+
+      {/* Modal for Create/Edit */}
+      <AnimatePresence>
+        {(isCreating || editingId) && (
+          <motion.div
+            className="fixed inset-0 flex items-center justify-center bg-black/50 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md p-6"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+            >
+              <h2 className="flex items-center gap-2 text-blue-700 dark:text-blue-300 font-semibold mb-4">
+                <Plus className="w-5 h-5" />
+                {editingId ? "Edit Category" : "Create New Category"}
+              </h2>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Category Name
+                  </label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter category name"
+                    className="dark:bg-gray-800 dark:border-gray-700"
+                    required
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button type="submit" className="flex items-center gap-2">
+                    <Save className="w-4 h-4" />
+                    {editingId ? "Update" : "Create"}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={cancelEdit}>
+                    <X className="w-4 h-4" />
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

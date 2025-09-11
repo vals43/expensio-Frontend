@@ -151,7 +151,7 @@ const Expenses = () => {
                   Total Expenses
                 </span>
                 <span className="font-medium text-red-600 dark:text-red-500">
-                  {totalExpenses} Ar
+                  {totalExpenses.toFixed(2)} Ar
                 </span>
               </div>
             </div>

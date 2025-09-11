@@ -7,10 +7,9 @@ import { FinanceDashboard } from './pages/FinanceDashboard';
 import { Profile } from './pages/Profile';
 import Layout from './components/layout/Layout';
 import Income from './pages/Income';
-import { TransactionProvider } from './context/TransactionContext';
 import Expenses from './pages/Expenses';
 import { ProtectedRoute } from './context/ProtectedRoute';
-import { CategoryManager } from './components/category/category-manager';
+import { CategoryManager } from './pages/category-manager';
 
 export function AppRouter() {
   return (

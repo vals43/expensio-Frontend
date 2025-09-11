@@ -30,7 +30,7 @@ const Header = ({ openSidebar }) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-light-card dark:bg-dark-card text-light-text dark:text-dark-text border-b border-light-border dark:border-dark-border">
+    <header className="sticky top-0 z-30 bg-light-card dark:bg-dark-card text-light-text dark:text-dark-text border-b border-light-border dark:border-dark-border">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">

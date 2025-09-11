@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 // Fonction de connexion
 export const login = async (credentials) => {
   try {
-    const response = await apiClient.post("/auth/login", credentials);
+    const response = await apiClient.post("api/auth/login", credentials);
     const { token } = response.data;
     // Stocke le token dans le localStorage
     localStorage.setItem("jwtToken", token);

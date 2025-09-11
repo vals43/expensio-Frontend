@@ -32,6 +32,8 @@ export default function ProfileSecurity() {
       if (browserBrand) {
         brandName = browserBrand.brand;
       }
+      console.log(navigator);
+      
       
       navigator.userAgentData.getHighEntropyValues(['model']).then(ua => {
         setDeviceInfo({
