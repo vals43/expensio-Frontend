@@ -1,6 +1,6 @@
-// src/components/ui/NotificationModal.jsx
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircleIcon, XCircleIcon, InfoIcon } from "lucide-react";
+import { useEffect } from "react"; // ← Ajout pour useEffect
 
 const typeIcons = {
   success: <CheckCircleIcon className="w-6 h-6 text-green-600" />,
@@ -9,6 +9,18 @@ const typeIcons = {
 };
 
 export const NotificationModal = ({ isOpen, onClose, type = "success", message }) => {
+  // 🔹 Fermeture auto après 1,5 seconde
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => {
+        onClose(); // Appelle la fonction de fermeture
+      }, 1000); // 1,5 seconde
+
+      // Nettoyage du timer si modale fermée avant ou démontée
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, onClose]); // Dépendances : relance si isOpen change
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -31,12 +43,6 @@ export const NotificationModal = ({ isOpen, onClose, type = "success", message }
             <div className="flex-1 text-sm font-medium text-foreground dark:text-gray-100">
               {message}
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            >
-              ✕
-            </button>
           </motion.div>
         </motion.div>
       )}

@@ -1,5 +1,6 @@
 // src/context/incomeContext.jsx
 import { useEffect, useState, createContext, useContext } from "react";
+import { useLocation } from "react-router-dom"; // ← Ajout pour refetch sur route change
 import {
   fetchAllIncomes,
   createNewIncome,
@@ -12,7 +13,7 @@ export function getJsonIncomes() {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    const fetchAllExpense = async () => {
+    const fetchAllData = async () => { // ← Corrigé : était "fetchAllExpense" (typo)
       try {
         const data2 = await fetchAllIncomes();
         setData(data2);
@@ -20,7 +21,7 @@ export function getJsonIncomes() {
         console.error("Erreur lors du fetch des revenus :", error);
       }
     };
-    fetchAllExpense();
+    fetchAllData();
   }, []);
 
   return data;
@@ -31,33 +32,48 @@ const IncomeContext = createContext();
 
 export function IncomeProvider({ children }) {
   const [incomes, setIncomes] = useState([]);
+  const [isLoading, setIsLoading] = useState(true); // ← Ajout pour UX loading
+  const location = useLocation(); // ← Récupère la route actuelle
 
   // 🔹 Notification modal state
   const [notification, setNotification] = useState({ isOpen: false, type: "success", message: "" });
 
-  // 🔹 Fetch initial des revenus
+  // 🔹 Fetch initial ET à chaque route change
   useEffect(() => {
     const fetchIncomes = async () => {
+      setIsLoading(true); // ← Début loading
       try {
         const data = await fetchAllIncomes();
         setIncomes(data || []);
       } catch (error) {
         console.error("Erreur lors du fetch des revenus :", error);
-        showNotification("error", "Failed to fetch incomes");
+        // ← Condition : Pas de notif sur login/signup
+        if (!["/login", "/signup"].includes(location.pathname)) {
+          showNotification("error", "Failed to fetch incomes");
+        }
+      } finally {
+        setIsLoading(false); // ← Fin loading
       }
     };
     fetchIncomes();
-  }, []);
+  }, [location.pathname]); // ← Dépendance : Refetch à chaque pathname change
+
+  // 🔹 Fonction refetch manuelle
+  const refetchIncomes = async () => {
+    await fetchIncomes(); // Réutilise la logique ci-dessus
+  };
 
   // 🔹 Helper pour ouvrir la notification
   const showNotification = (type, message) => {
+    // ← Condition : Pas de notif sur login/signup
+    if (["/login", "/signup"].includes(location.pathname)) return;
     setNotification({ isOpen: true, type, message });
     setTimeout(() => {
       setNotification(prev => ({ ...prev, isOpen: false }));
     }, 2500); // auto close après 2.5s
   };
 
-  // 🔹 Actions sur les revenus
+  // 🔹 Actions sur les revenus (inchangées, mais ajout condition notif)
   const handleCreateIncome = async (newIncomeData) => {
     try {
       const response = await createNewIncome(newIncomeData);
@@ -100,6 +116,8 @@ export function IncomeProvider({ children }) {
     <IncomeContext.Provider
       value={{
         incomes,
+        isLoading, // ← Exposé pour spinner
+        refetchIncomes, // ← Pour refetch manuel
         handleCreateIncome,
         handleUpdateIncome,
         handleDeleteIncome,
@@ -108,13 +126,15 @@ export function IncomeProvider({ children }) {
     >
       {children}
 
-      {/* Notification Modal */}
-      <NotificationModal
-        isOpen={notification.isOpen}
-        onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
-        type={notification.type}
-        message={notification.message}
-      />
+      {/* Notification Modal : Conditionnel pour login/signup */}
+      {notification.isOpen && !["/login", "/signup"].includes(location.pathname) && (
+        <NotificationModal
+          isOpen={notification.isOpen}
+          onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+          type={notification.type}
+          message={notification.message}
+        />
+      )}
     </IncomeContext.Provider>
   );
 }

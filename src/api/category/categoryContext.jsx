@@ -1,4 +1,6 @@
+// src/context/categoryContext.jsx
 import { useEffect, useState, createContext, useContext } from "react";
+import { useLocation } from "react-router-dom"; // ← Ajout pour refetch sur route change
 import {
   fetchAllCategories,
   createNewCategory,
@@ -12,6 +14,8 @@ const CategoryContext = createContext();
 
 export function CategoryProvider({ children }) {
   const [categories, setCategories] = useState([]);
+  const [isLoading, setIsLoading] = useState(true); // ← Ajout pour UX loading
+  const location = useLocation(); // ← Récupère la route actuelle
 
   // 🔹 État de la modal de notification
   const [notification, setNotification] = useState({
@@ -20,29 +24,42 @@ export function CategoryProvider({ children }) {
     message: "",
   });
 
-  // 🔹 Fetch initial des catégories
+  // 🔹 Fetch initial ET à chaque route change
   useEffect(() => {
     const fetchCategories = async () => {
+      setIsLoading(true); // ← Début loading
       try {
         const data = await fetchAllCategories();
         setCategories(data || []);
       } catch (error) {
         console.error("Erreur lors du fetch des catégories :", error);
-        showNotification("error", "Failed to fetch categories");
+        // ← Condition : Pas de notif sur login/signup
+        if (!["/login", "/signup"].includes(location.pathname)) {
+          showNotification("error", "Failed to fetch categories");
+        }
+      } finally {
+        setIsLoading(false); // ← Fin loading
       }
     };
     fetchCategories();
-  }, []);
+  }, [location.pathname]); // ← Dépendance : Refetch à chaque pathname change
+
+  // 🔹 Fonction refetch manuelle
+  const refetchCategories = async () => {
+    await fetchCategories(); // Réutilise la logique ci-dessus
+  };
 
   // 🔹 Helper pour ouvrir la notification
   const showNotification = (type, message) => {
+    // ← Condition : Pas de notif sur login/signup
+    if (["/login", "/signup"].includes(location.pathname)) return;
     setNotification({ isOpen: true, type, message });
     setTimeout(() => {
       setNotification((prev) => ({ ...prev, isOpen: false }));
     }, 2500); // auto close après 2.5s
   };
 
-  // 🔹 Actions sur les catégories
+  // 🔹 Actions sur les catégories (inchangées, mais ajout condition notif)
   const handleCreateCategory = async (newCategoryData) => {
     try {
       const response = await createNewCategory(newCategoryData);
@@ -79,7 +96,6 @@ export function CategoryProvider({ children }) {
     } catch (error) {
       console.error("Erreur lors de la suppression de la catégorie:", error);
       showNotification("error", "Failed to delete category there is expense re-attached");
-      
       throw error;
     }
   };
@@ -88,6 +104,8 @@ export function CategoryProvider({ children }) {
     <CategoryContext.Provider
       value={{
         categories,
+        isLoading, // ← Exposé pour spinner
+        refetchCategories, // ← Pour refetch manuel
         handleCreateCategory,
         handleUpdateCategory,
         handleDeleteCategory,
@@ -95,12 +113,15 @@ export function CategoryProvider({ children }) {
       }}
     >
       {children}
-      <NotificationModal
-        isOpen={notification.isOpen}
-        onClose={() => setNotification((prev) => ({ ...prev, isOpen: false }))}
-        type={notification.type}
-        message={notification.message}
-      />
+      {/* Notification Modal : Conditionnel pour login/signup */}
+      {notification.isOpen && !["/login", "/signup"].includes(location.pathname) && (
+        <NotificationModal
+          isOpen={notification.isOpen}
+          onClose={() => setNotification((prev) => ({ ...prev, isOpen: false }))}
+          type={notification.type}
+          message={notification.message}
+        />
+      )}
     </CategoryContext.Provider>
   );
 }
