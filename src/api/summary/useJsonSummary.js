@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import moment from 'moment';
 import { getSummary, getDailySummary, getIncomesBySource, getExpensesBySource } from "./summaryService";
 
 export function useJsonSummary(month) {
@@ -94,3 +95,41 @@ export function useJsonExpensesBySource() {
 
   return { data, loading, error };
 }
+
+
+
+export const getYearlySummary = async () => {
+  try {
+    const currentYear = moment().utc().year();
+    const monthlySummariesPromises = [];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    for (let i = 0; i < 12; i++) {
+      const targetMonth = moment.utc().year(currentYear).month(i).format('YYYY-MM');
+
+      const summaryPromise = getSummary(targetMonth)
+        .then(summary => {
+          return {
+            month: monthNames[i],
+            ...summary,
+            balance: (summary.income || 0) - (summary.expenses || 0)
+          };
+        })
+        .catch(error => {
+          console.error(`Erreur lors de la récupération pour le mois ${targetMonth}:`, error);
+          return null;
+        });
+
+      monthlySummariesPromises.push(summaryPromise);
+    }
+
+    const allSummaries = await Promise.all(monthlySummariesPromises);
+
+    const yearlyData = allSummaries.filter(summary => summary !== null);
+
+    return yearlyData;
+  } catch (error) {
+    console.error('Erreur dans getYearlySummary:', error);
+    throw new Error('Failed to retrieve yearly summary');
+  }
+};

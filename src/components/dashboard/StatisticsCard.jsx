@@ -111,7 +111,7 @@ export function StatisticsCard() {
           </ResponsiveContainer>
           <div className="text-center mt-2">
             <p className="text-sm text-gray-500 dark:text-gray-400">Total Spending</p>
-            <p className="text-xl font-bold text-light-text dark:text-dark-text">{totalSpending} Ar</p>
+            <p className="text-xl font-bold text-light-text dark:text-dark-text">{totalSpending.toFixed(2)} Ar</p>
           </div>
         </div>
 

@@ -112,9 +112,6 @@ export default function BudgetAlertCard() {
             <TrendingUp className="h-5 w-5 text-green-600" />
           )}
           <CardTitle className="text-xl">Alerte Budget</CardTitle>
-          <Button onClick={fetchBudgetAlerts} variant="ghost" size="sm">
-            <RefreshCw className="h-4 w-4" />
-          </Button>
         </div>
         <span className={`text-sm font-medium px-2 py-1 rounded ${alert ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-700"}`}>
           {expenseRatio.toFixed(1)}% du revenu dépensé
@@ -176,14 +173,6 @@ export default function BudgetAlertCard() {
               <p className="text-xs text-muted-foreground">dépensé</p>
             </div>
           </div>
-        </div>
-
-        {/* Remaining Balance */}
-        <div className="text-center p-4 rounded-lg bg-muted/50 border">
-          <p className="text-sm text-muted-foreground mb-1">Solde restant</p>
-          <p className={`text-2xl font-bold ${remaining >= 0 ? "text-green-600" : "text-red-600"}`}>
-            {remaining.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
-          </p>
         </div>
       </CardContent>
     </Card>

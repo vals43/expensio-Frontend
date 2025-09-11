@@ -9,44 +9,11 @@ import { TransactionCard } from '../components/card/TransactionCard';
 import { Calendar, CreditCardIcon, RefreshCcw } from 'lucide-react';
 import { ActionButtonsCard } from './../components/dashboard/ActionButtonsCard';
 import { useJsonUser } from '../api/user/useJsonUser.js';
-import { useJsonDailySummary, useJsonSummary } from '../api/summary/useJsonSummary.js';
+import { getYearlySummary, useJsonDailySummary, useJsonSummary } from '../api/summary/useJsonSummary.js';
 import { getJsonExpenses } from '../api/expenses/expenseContext.jsx';
 import { getJsonIncomes } from '../api/incomes/getJsonIncomes.jsx';
 import BudgetAlertsDashboard from '../components/dashboard/budget-alerts-dashboard.jsx';
-import Button from '../components/ui/Button.jsx';
 
-const upTrendData = [{
-  name: 'Jan',
-  value: 100
-}, {
-  name: 'Feb',
-  value: 120
-}, {
-  name: 'Mar',
-  value: 110
-}, {
-  name: 'Apr',
-  value: 140
-}, {
-  name: 'May',
-  value: 160
-}];
-const downTrendData = [{
-  name: 'Jan',
-  value: 200
-}, {
-  name: 'Feb',
-  value: 180
-}, {
-  name: 'Mar',
-  value: 190
-}, {
-  name: 'Apr',
-  value: 150
-}, {
-  name: 'May',
-  value: 130
-}];
 const transactions = [{
   id: 1,
   title: 'test',
@@ -96,6 +63,17 @@ const formatDailyExpenses = (dailyData) => {
   return formattedData;
 };
 
+async function getData() {
+    
+  const sampleMonthlyData = await getYearlySummary();
+  if (!sampleMonthlyData) {
+    return "loading"
+  }
+return(sampleMonthlyData);
+}
+
+const monthlyData = await getData()
+
 export function FinanceDashboard() {
   const user = useJsonUser();
   const summary = useJsonSummary();
@@ -106,6 +84,8 @@ export function FinanceDashboard() {
   const mois = new Date().toISOString().split('-')[1];
 
   const dailyIncome = useJsonDailySummary(`${year}-${mois}-01`,`${year}-${Number(mois)+1}-01`)
+
+  
   const dailyExpense = useJsonDailySummary(`${year}-${mois}-01`,`${year}-${Number(mois)+1}-01`)
 
   if (!user) {
@@ -161,6 +141,7 @@ export function FinanceDashboard() {
   const dataIncome = formatDailyIncomes(dailyIncome)
   const dataExpenses = formatDailyExpenses(dailyExpense)
 
+
   
   
   
@@ -188,7 +169,7 @@ export function FinanceDashboard() {
         }} transition={{
           duration: 0.5
         }}>
-          <CashflowCard  sumExpenses={sumExpenses} sumIncome={sumIncomes} balanceMonthly={balanceMonthly}/>
+          <CashflowCard monthlyData={monthlyData}/>
         </motion.div>
         <div className="grid grid-cols-1 gap-4">
           <motion.div initial={{

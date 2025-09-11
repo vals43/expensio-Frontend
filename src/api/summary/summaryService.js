@@ -17,6 +17,8 @@ export async function getSummary(month) {
   }
 }
 
+
+
 // New function to fetch a daily summary for a given period.
 export async function getDailySummary(startDate, endDate) {
   // Use the current date as a default if none is provided.
